@@ -1,71 +1,87 @@
-# The Intelligence Scale
+# Intelligence Scale
 
-The **Intelligence Scale** classifies companies by the role artificial intelligence plays in executing their operations.
+<p align="center">
+  <a href="https://rodolphebarbanneau.github.io/intelligence-scale/report/">
+    <img src="docs/quadrant.svg" alt="Latest Intelligence Scale quadrant" width="640">
+  </a>
+</p>
 
-Like the [Kardashev scale](https://grokipedia.com/page/Kardashev_scale) measures civilizations by the energy they can harness, the **Intelligence Scale** measures organizations by the degree to which **operational agency has shifted from humans to AI**.
+This project rates the AI products an organization can adopt — Cursor, Claude, Microsoft 365 Copilot, Sierra, and the rest. It does not rate which foundation model is smarter.
 
-It is not determined by which models a company uses, how many agents it deploys, or how sophisticated its technology is. It asks a simpler question:
+A product can sit on a strong model and still leave people doing every step. Another can take real work off a team's plate and still only serve one craft. The useful questions are **who gets the work done**, and **whose work fits on this product**. The [quadrant](docs/quadrant.md) is where those two answers meet.
 
-> **Who gets the work done?**
+The rated object is the **chassis**: the product a company can buy and run. The foundation model inside it is a separate question. A first-class wrap of another agent counts as this product exposes it, not as a copy of that agent's score. Customer counts, funding, and vendor size are not on the chart.
 
-As organizations advance through the scale, operational agency progressively shifts to AI, from assistance to execution to orchestration, while the human role evolves from execution to supervision to governance.
+## Two axes
 
-## Type I - Augmented
+The horizontal axis is the [Intelligence Scale](docs/intelligence-scale.md). The vertical axis is the [Execution Scale](docs/execution-scale.md). A product can sit far along one and early on the other. That is not a failure of the other scale.
 
-**People execute. AI assists.**
+### Intelligence — who gets the work done?
 
-A **Type I company** remains human-operated. **AI assistants** amplify employees through agents, recommendations, automation, and delegated tasks, but humans still own and orchestrate the company's business processes.
+Operational agency moves from people to AI in three stages.
 
-Agents may independently perform substantial tasks such as handling messages, preparing documents, analyzing data, writing code, or operating software. Autonomy at the task level does not make the organization Type II. The distinction is whether AI assists the human executing a process or takes responsibility for executing the process itself.
+- **Type I — Augmented.** People execute. AI assists. Humans still own the process. AI drafts, recommends, or completes bounded tasks.
+- **Type II — Delegated.** AI executes. People supervise. A persistent AI worker can own a process over time. Humans set objectives, permissions, and exceptions.
+- **Type III — Autonomous.** AI orchestrates. People govern. Operators coordinate the work among themselves. Human attention moves to purpose, policy, and irreversible decisions.
 
-### Type I characteristics
+Left of center, people are still doing the work. Right of center, AI runs work on its own, started by triggers, with people supervising. At **2.0** and beyond, a persistent AI actor owns the process, not only a task inside it.
 
-* [ ] AI is routinely embedded in everyday work.
-* [ ] AI materially increases human productivity and capability.
-* [ ] Agents can execute bounded tasks independently.
-* [ ] Humans remain the primary owners and executors of end-to-end processes.
-* [ ] Removing AI would reduce performance, but the organization would remain fundamentally human-operated.
+### Coverage — whose work fits?
 
-**Goal:** amplify every human.
+This axis asks how far across the company the product can carry work as it ships, not how clever the model inside it is.
 
-## Type II - Delegated
+- A **craft tool** serves one specialist lane, such as writing code or editing video.
+- A **function product** serves one business function, such as support or sales.
+- A **company surface** is something several functions can put their own work on: shared work, systems of record, and a catalog that grows coverage.
 
-**AI executes. People supervise.**
+A coding agent that can own an engineering change sits to the right and stays low. A company-wide assistant that only amplifies people sits high and stays left.
 
-A **Type II company** delegates business execution to **AI Operators**.
+## The four quadrants
 
-An **Operator** is a persistent AI worker with an execution environment, identity, memory, permissions, tools, and access to specialized agents. An Operator can own work over time, interact with systems and people, coordinate tasks, and execute complete business processes.
+| Quadrant | Placement | What it means |
+| --- | --- | --- |
+| **Leaders** | Right and high | Agency can shift, and the product is a company surface, not a craft tool. |
+| **Challengers** | Left and high | Company-wide, still human-operated. Many teams can put work on it. AI still assists rather than owns the process. |
+| **Visionaries** | Right and low | Deep AI in one craft or function. Work can move toward AI inside a specialist lane. The rest of the company has no native path onto it. |
+| **Niche** | Left and low | Thin on both scales. Limited agency shift, and limited organizational coverage. |
 
-Humans define objectives, policies, permissions, and escalation boundaries. Operators perform the operational work.
+A company-wide chat assistant that people prompt step by step belongs with the Challengers. A workspace product where agents run on schedules and events across many teams belongs with the Leaders. A coding or support agent that carries its work end to end belongs with the Visionaries until other functions have a native path. A thin assistant or an unfinished prototype sits with Niche.
 
-### Type II characteristics
+Each release asks several models to rate every product. The dot is the **median** of the scores that came back. The table ranks products by a **0–100 score**, the geometric mean of the two published axes, and also shows the spread so a single outlier stays visible.
 
-* [ ] Operators own and execute significant end-to-end business processes.
-* [ ] Operational agency is assessed at the process level, not by isolated AI tasks.
-* [ ] Operators can select and use multiple agents, tools, and applications.
-* [ ] Operators maintain persistent identity, context, permissions, and memory.
-* [ ] Humans primarily supervise, resolve exceptions, and define objectives instead of performing routine execution.
-* [ ] Core operations can continue without continuous human execution.
+## How a product is rated
 
-**Goal:** move humans from execution to supervision.
+The folder [`specs/`](specs/) holds one sourced dossier per product. A dossier describes what the product is and lists its features, preferring the official docs site. It does not contain a score.
 
-## Type III - Autonomous
+A published release then rates every dossier with two open skills:
 
-**AI orchestrates. People govern.**
+- the [type evaluator](skills/evaluate-type-scale/), from 0.0 to 3.0
+- the [execution evaluator](skills/evaluate-exec-scale/), from 0.00 to 1.00
 
-A **Type III company** is an autonomous organization.
+The evaluators are conservative. A claim without a source stays unproven. Marketing language does not raise a score. They rate the chassis, not the model, and they grade a wrap by what this product surfaces and adds.
 
-AI Operators collectively orchestrate the organization: they determine and allocate work, execute processes, coordinate with one another, adapt to changing conditions, and evaluate outcomes against human-defined objectives.
+Someone who represents that product can correct a factual error in their own dossier. The next release reads the correction and rates the product again.
 
-Humans remain responsible for the organization, but their role has shifted from supervising execution to governing the system.
+## Docs
 
-### Type III characteristics
+- [The Intelligence Scale](docs/intelligence-scale.md) — Type I Augmented, Type II Delegated, and Type III Autonomous.
+- [The Execution Scale](docs/execution-scale.md) — domain span, shared work, system reach, extensible coverage, work surfaces, adoption path, and ready-made jobs.
+- [The quadrant](docs/quadrant.md) — how the two scores become a chart, and what each quadrant means.
 
-* [ ] Routine operational execution is performed autonomously by AI Operators.
-* [ ] Operators determine and allocate operational work within their mandates.
-* [ ] Operators coordinate directly without requiring human orchestration.
-* [ ] The organization detects events, makes operational decisions, executes responses, and evaluates outcomes autonomously.
-* [ ] Operators adapt processes when circumstances change instead of relying only on predefined workflows.
-* [ ] Human intervention is exceptional, with humans focused on purpose, strategy, capital, policy, risk, and major irreversible decisions.
+## Skills
 
-**Goal:** move humans from supervision to governance.
+Open skills live in this repository.
+
+- [Create spec](skills/create-spec/) writes a sourced dossier and does not rate the product.
+- [Evaluate type scale](skills/evaluate-type-scale/) rates the chassis on how far operational agency can shift from people to AI.
+- [Evaluate exec scale](skills/evaluate-exec-scale/) rates the chassis on how much of a company's work the product can carry as it ships.
+
+## The report
+
+The [report](https://rodolphebarbanneau.github.io/intelligence-scale/report/) shows the quadrant, the spread of scores across models, and each model's written analysis. Earlier releases stay selectable. To browse a local checkout, run `python scripts/serve.py`.
+
+## Contributing
+
+See [CONTRIBUTORS.md](CONTRIBUTORS.md).
+
+Project contributors change the scales, the skills, and the report. Spec representatives may ask for corrections to factual errors in their own dossier and do not set scores.

@@ -1,0 +1,85 @@
+name: Evaluate
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.models.outputs.matrix }}
+      run_id: ${{ steps.meta.outputs.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+      - id: models
+        run: python scripts/rate.py --print-matrix
+      - id: meta
+        run: echo "run_id=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+
+  evaluate:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        model: ${{ fromJson(needs.setup.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Copilot CLI
+        run: npm install -g @github/copilot
+      - name: Rate specs
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+          COPILOT_AUTO_UPDATE: "false"
+        run: python scripts/rate.py --model "${{ matrix.model }}" --run-id "${{ needs.setup.outputs.run_id }}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: partial-${{ strategy.job-index }}
+          path: temp
+          if-no-files-found: warn
+
+  aggregate:
+    needs: [setup, evaluate]
+    if: always() && needs.setup.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          pattern: partial-*
+          path: partial-downloads
+          merge-multiple: true
+      - name: Collect partials
+        run: |
+          dest="temp/${{ needs.setup.outputs.run_id }}"
+          mkdir -p "$dest"
+          find partial-downloads -name '*.json' -exec cp -f {} "$dest/" \;
+      - name: Aggregate
+        run: python scripts/rate.py --aggregate --run-id "${{ needs.setup.outputs.run_id }}"
+      - name: Snapshot quadrant
+        run: python scripts/quadrant.py --run-id "${{ needs.setup.outputs.run_id }}" --docs
+      - name: Commit output
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add output/index.json "output/${{ needs.setup.outputs.run_id }}" docs/quadrant.svg
+          if git diff --staged --quiet; then
+            exit 0
+          fi
+          git commit -m "Record evaluation output for ${{ needs.setup.outputs.run_id }}"
+          git push

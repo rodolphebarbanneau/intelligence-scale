@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 720" role="img" aria-label="Intelligence Scale quadrant">
+  <title>Intelligence Scale quadrant</title>
+  <desc>Latest snapshot. Horizontal axis is intelligence. Vertical axis is execution coverage.</desc>
+  <rect width="100%" height="100%" fill="#f3efe6"/>
+  <rect x="56" y="56" width="608" height="608" rx="18" fill="#fffcf8" stroke="#ddd4c6"/>
+  <line x1="360.0" y1="56" x2="360.0" y2="664" stroke="#ddd4c6"/>
+  <line x1="56" y1="360.0" x2="664" y2="360.0" stroke="#ddd4c6"/>
+  <text x="208.0" y="84" text-anchor="middle" fill="#5f584e" font-family="Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" letter-spacing="1.2">CHALLENGERS</text>
+  <text x="512.0" y="84" text-anchor="middle" fill="#5f584e" font-family="Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" letter-spacing="1.2">LEADERS</text>
+  <text x="208.0" y="648" text-anchor="middle" fill="#5f584e" font-family="Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" letter-spacing="1.2">NICHE</text>
+  <text x="512.0" y="648" text-anchor="middle" fill="#5f584e" font-family="Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" letter-spacing="1.2">VISIONARIES</text>
+  <text x="360.0" y="38" text-anchor="middle" fill="#5f584e" font-family="Iowan Old Style, Palatino, Georgia, serif" font-size="15">Coverage</text>
+  <text x="360.0" y="704" text-anchor="middle" fill="#5f584e" font-family="Iowan Old Style, Palatino, Georgia, serif" font-size="15">Intelligence</text>
+  <circle cx="137.1" cy="451.2" r="7" fill="#2c6bed" stroke="#fffcf8" stroke-width="2"><title>Salesforce Agentforce — Niche</title></circle>
+  <circle cx="177.6" cy="554.6" r="7" fill="#2c6bed" stroke="#fffcf8" stroke-width="2"><title>ChatGPT — Niche</title></circle>
+  <circle cx="360.0" cy="445.1" r="7" fill="#2c6bed" stroke="#fffcf8" stroke-width="2"><title>ChatGPT Workspace Agents — Visionaries</title></circle>
+  <circle cx="96.5" cy="578.9" r="7" fill="#2c6bed" stroke="#fffcf8" stroke-width="2"><title>Claude — Niche</title></circle>
+  <circle cx="339.7" cy="469.4" r="7" fill="#2c6bed" stroke="#fffcf8" stroke-width="2"><title>Claude Code — Niche</title></circle>
+  <circle cx="80.3" cy="578.9" r="7" fill="#2c6bed" stroke="#fffcf8" stroke-width="2"><title>Claude Cowork — Niche</title></circle>
+  <circle cx="319.5" cy="487.7" r="7" fill="#2c6bed" stroke="#fffcf8" stroke-width="2"><title>Codex — Niche</title></circle>
+  <circle cx="319.5" cy="512.0" r="7" fill="#2c6bed" stroke="#fffcf8" stroke-width="2"><title>Cursor — Niche</title></circle>
+  <circle cx="319.5" cy="536.3" r="7" fill="#2c6bed" stroke="#fffcf8" stroke-width="2"><title>Devin — Niche</title></circle>
+  <circle cx="339.7" cy="183.7" r="7" fill="#2c6bed" stroke="#fffcf8" stroke-width="2"><title>Dust — Challengers</title></circle>
+  <circle cx="157.3" cy="487.7" r="7" fill="#2c6bed" stroke="#fffcf8" stroke-width="2"><title>Gemini — Niche</title></circle>
+  <circle cx="339.7" cy="536.3" r="7" fill="#2c6bed" stroke="#fffcf8" stroke-width="2"><title>GitHub Copilot — Niche</title></circle>
+  <circle cx="380.3" cy="426.9" r="7" fill="#2c6bed" stroke="#fffcf8" stroke-width="2"><title>Glean — Visionaries</title></circle>
+  <circle cx="218.1" cy="512.0" r="7" fill="#2c6bed" stroke="#fffcf8" stroke-width="2"><title>Grok — Niche</title></circle>
+  <circle cx="380.3" cy="445.1" r="7" fill="#2c6bed" stroke="#fffcf8" stroke-width="2"><title>Grok Bot — Visionaries</title></circle>
+  <circle cx="80.3" cy="639.7" r="7" fill="#2c6bed" stroke="#fffcf8" stroke-width="2"><title>Grok Build — Niche</title></circle>
+  <circle cx="177.6" cy="578.9" r="7" fill="#2c6bed" stroke="#fffcf8" stroke-width="2"><title>Microsoft 365 Copilot — Niche</title></circle>
+  <circle cx="380.3" cy="402.6" r="7" fill="#2c6bed" stroke="#fffcf8" stroke-width="2"><title>Notion AI — Visionaries</title></circle>
+  <circle cx="299.2" cy="512.0" r="7" fill="#2c6bed" stroke="#fffcf8" stroke-width="2"><title>Replit Agent — Niche</title></circle>
+  <circle cx="96.5" cy="493.8" r="7" fill="#2c6bed" stroke="#fffcf8" stroke-width="2"><title>Sierra — Niche</title></circle>
+</svg>

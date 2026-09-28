@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Intelligence Scale">
+  <style>
+    .ink { stroke: #1b1916; fill: none; stroke-width: 1.75; stroke-linecap: square; }
+    @media (prefers-color-scheme: dark) {
+      .ink { stroke: #f3efe6; }
+    }
+  </style>
+  <rect class="ink" x="6" y="6" width="20" height="20" rx="1.5"/>
+  <path class="ink" d="M16 3v26M3 16h26M6 6l20 20M26 6L6 26"/>
+</svg>

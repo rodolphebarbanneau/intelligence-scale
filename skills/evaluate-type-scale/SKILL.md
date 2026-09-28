@@ -1,13 +1,15 @@
 ---
-name: intelligence-scale-solution-evaluator
+name: evaluate-type-scale
 description: Research and conservatively rate an AI solution, technology, product, platform, or framework against the Intelligence Scale from 0.0 to 3.0. Use when evaluating how far a technology can natively enable organizations to shift operational agency from humans to AI across Type I Augmented, Type II Delegated, and Type III Autonomous operating models.
 ---
 
-# Intelligence Scale Solution Evaluator
+# Intelligence Scale Type Evaluator
 
 Evaluate the **capability ceiling of a technology** against the [Intelligence Scale](https://github.com/rodolphebarbanneau/intelligence-scale).
 
 The rating measures what operating model the technology can **natively enable**, not how much AI a particular customer currently uses.
+
+This repository rates the **chassis**: the product an organization can adopt. It does not rate the **motor**: the foundation model inside that product. A first-class wrap of another agent is part of the chassis as this product exposes it. Do not copy a sibling dossier's scores.
 
 The scale is:
 
@@ -16,6 +18,8 @@ The scale is:
 * **Type III — Autonomous:** AI orchestrates. People govern.
 
 Be conservative. Do not reward marketing language, generic extensibility, demos, roadmap features, or theoretical possibilities as if they were native product capabilities.
+
+Do not raise or lower the type score because the product is multiplayer, has a marketplace, or covers many business functions. That is the Execution Scale. A specialist craft tool can still reach Type II. A company-wide assistant can still stay at Type I.
 
 ## 1. Establish the evaluation scope
 
@@ -27,7 +31,9 @@ Before scoring, identify:
 * the relevant edition or plan, when capabilities differ;
 * whether the subject is a product, open-source project, framework, or platform.
 
-Unless otherwise requested, evaluate the strongest **currently available and supported first-party configuration**.
+When a spec file is given, that file is the brief. Rate the product it names. Use the file's scope, edition, and cited sources. You may open URLs cited in the file. Do not replace the file with an open web search. A claim with no source is unproven and scores **0.00**.
+
+Unless otherwise requested, evaluate the strongest **currently available and supported first-party configuration**. That configuration includes a documented, first-class wrap when the product starts and steers another agent as a supported provider.
 
 Do not count unreleased roadmap features.
 
@@ -35,9 +41,9 @@ For open-source projects, prefer released or documented functionality over specu
 
 ## 2. Research before rating
 
-Gather evidence before assigning any score.
+When a spec file is given, that file is the brief. Gather evidence from it and from the URLs it cites. Do not replace the file with an open web search.
 
-Prefer sources in this order:
+If no spec is given, prefer sources in this order:
 
 1. Official product documentation.
 2. Official source repository and maintained README files.
@@ -48,9 +54,11 @@ Prefer sources in this order:
 
 Use current sources whenever the product changes rapidly.
 
-Search specifically for capabilities relevant to each criterion. Do not search only for vendor terminology such as "autonomous", "agentic", "operator", or "multi-agent".
+Look for capabilities relevant to each criterion in those sources. Do not rely only on vendor terminology such as "autonomous", "agentic", "operator", or "multi-agent".
 
 A product calling something an **agent**, **operator**, or **autonomous agent** is not evidence that it satisfies any particular Intelligence Scale Type.
+
+Do not treat a marketplace, a shared workspace, or a long feature list as Type II or Type III. Coverage is the other axis.
 
 For every scored criterion, record the evidence and source.
 
@@ -77,7 +85,9 @@ Apply these rules strictly:
 * Capability inferred only from secondary sources cannot score above **0.50**.
 * Generic API, plugin, MCP, scripting, or extension support does not prove a capability is native.
 * "You could build this with the product" is not equivalent to "the product provides this".
-* A feature requiring another product to provide the core orchestration cannot score above **0.25** for that criterion.
+* A feature the buyer must assemble with generic APIs, MCP, or an unsupported third party cannot score above **0.25**.
+* A documented, first-class wrap of another product is not that case. Grade the adopted configuration: this product plus its strongest supported wrap, as this product exposes it. Do not copy a sibling dossier's scores. Discount what this product hides, breaks, or leaves on the other product's native UI. Credit what this product adds.
+* Do not raise or lower a grade because the foundation model inside the chassis is stronger or weaker.
 * Roadmap, announced, experimental-but-unavailable, or hypothetical functionality scores **0.00**.
 
 ## 4. Evaluate Type I — Augmented
@@ -118,23 +128,51 @@ Type II is the critical execution threshold.
 
 A technology reaches Type II only when it natively enables AI to take responsibility for **complete business processes**, while humans move primarily into supervision.
 
+In Type II, people **define** the work: objectives, the process, policy, permissions, and escalation. AI **executes** it. Who wrote the process does not decide the grade. A process a person designed, a publisher listed, or the product's AI generated and a person approved is still a Type II process. What decides the grade is who executes each instance of it. An AI that invents or rewrites the process belongs to Type III.
+
+Each criterion below has its own grade table. The evidence grades in section 3 still cap every row: beta or preview stays at **0.75** or below, and generic APIs or MCP the buyer assembles stay at **0.25** or below.
+
 ### II.1 — End-to-end process ownership
 
 A persistent AI actor can own and execute a meaningful end-to-end process over time.
 
-Do not award full credit for agents that merely complete individual tasks dispatched by humans.
+| Grade | Meaning |
+| ----- | ------- |
+| **1.00** | A first-class persistent AI actor can be put in charge of a business process. It takes each case from its triggers, channel, or queue, carries it to an outcome, and keeps doing so across runs. Humans set the mandate and handle exceptions. |
+| **0.75** | The same ownership exists, with a real limit: preview, one narrow kind of process, or routine cases that still stop at a draft a person must finish. |
+| **0.50** | A workflow, automation, or trigger engine runs a designed multi-step process, with no persistent actor that owns it. Or official primitives that a builder must assemble into ownership. |
+| **0.25** | Task runs a person or a single event dispatches: one change, one reply, one report. |
+| **0.00** | Chat only, or unproven. |
+
+Do not lower II.1 because a human, a publisher, or a template defined the process. That is the Type II mandate. Do lower it when each unit of work is still a task a person hands over.
 
 ### II.2 — Process-level execution
 
 AI can execute and progress through the process without a human orchestrating each task or step.
 
-A long multi-step task is not automatically a business process.
+| Grade | Meaning |
+| ----- | ------- |
+| **1.00** | Once a run starts, it moves through the process steps, branches, and retries with no person required between steps. Human approval steps exist but are the organization's choice or limited to exceptions. |
+| **0.75** | Runs progress on their own, with a real limit: routine steps require a person and the organization cannot remove that, or the capability is preview. |
+| **0.50** | The AI completes a multi-step task on its own. Moving between tasks of the process needs a person. |
+| **0.25** | A person orchestrates most steps. |
+| **0.00** | Unproven. |
+
+A long multi-step task is not automatically a business process. That question belongs to II.1. Do not lower II.2 because the steps were written by a person, or because optional approval steps exist.
 
 ### II.3 — Multi-capability execution
 
 The AI actor can use the agents, models, tools, applications, systems, or other capabilities required to complete its process.
 
-Full credit requires the actor to use or select these capabilities as part of execution rather than relying on a human to manually coordinate them.
+| Grade | Meaning |
+| ----- | ------- |
+| **1.00** | During a run, the actor selects and uses the tools, applications, agents, and systems it was granted. No person coordinates each call. |
+| **0.75** | The same, with a real limit: a key capability is beta or preview, or writes land only as drafts a person sends. |
+| **0.50** | One family of tools only, or a person moves work between capabilities. |
+| **0.25** | Capabilities are generic APIs or MCP the buyer wires. |
+| **0.00** | Unproven. |
+
+Granting, binding, or configuring the toolbox at setup does not lower II.3. Every actor is given its access by someone.
 
 ### II.4 — Persistent AI actor
 
@@ -148,7 +186,15 @@ For full credit, look for meaningful support for:
 * credentials or controlled system access;
 * durable execution state or environment.
 
-An ephemeral agent invocation is not a persistent AI actor.
+| Grade | Meaning |
+| ----- | ------- |
+| **1.00** | A durable actor has its own principal, memory across runs, its own permissions, its own credentials, and a durable environment or execution state. |
+| **0.75** | A durable actor exists and one element is limited: it acts only with a person's access, its memory is preview, or it is beta. |
+| **0.50** | Persistent configuration, threads, or resumable sessions, with no principal of its own. |
+| **0.25** | Each run gets an ephemeral environment that ends with it. |
+| **0.00** | Unproven. |
+
+An ephemeral agent invocation is not a persistent AI actor. Humans keeping admin rights over the actor does not lower II.4. That is governance, and it belongs to II.5 and III.6.
 
 ### II.5 — Human supervision and exceptions
 
@@ -164,6 +210,14 @@ Look for capabilities such as:
 * auditability;
 * human decision points.
 
+| Grade | Meaning |
+| ----- | ------- |
+| **1.00** | People can observe runs, receive approvals and exceptions, intervene or stop, and audit, without executing routine steps. |
+| **0.75** | Supervision exists and is limited: some of those pieces are missing, preview, or only on one plan. |
+| **0.50** | Review happens only after the fact: a diff, a transcript, a report. |
+| **0.25** | Humans routinely execute the steps. |
+| **0.00** | Unproven. |
+
 ### II.6 — Autonomous initiation and continuity
 
 Processes can begin or continue without a person manually starting every execution.
@@ -178,7 +232,15 @@ Look for:
 * persistent monitoring;
 * automatic continuation.
 
-A background task that was manually dispatched and simply takes a long time is not sufficient by itself.
+| Grade | Meaning |
+| ----- | ------- |
+| **1.00** | Schedules and event or webhook triggers start runs with no person starting each one. Work continues in the background. |
+| **0.75** | One kind of trigger only, runs only while an app stays open, or the trigger capability is preview. |
+| **0.50** | A person-started run repeats or continues in the background. |
+| **0.25** | A person starts every run. |
+| **0.00** | Unproven. |
+
+A background task that was manually dispatched and simply takes a long time is not sufficient by itself. A person authoring the trigger rule does not lower II.6. Someone always sets the schedule.
 
 ### Type II hard gate
 
@@ -241,6 +303,18 @@ The technology can support an operating model where routine human intervention i
 
 Human governance controls do not reduce the score. Type III does not mean humans relinquish ultimate authority.
 
+### Grading Type III
+
+Type III criteria use the evidence grades in section 3. These anchors keep partial credit consistent:
+
+| Grade | Meaning |
+| ----- | ------- |
+| **1.00** | The product natively does it: AI decides, coordinates, adapts, or closes the loop within its mandate. |
+| **0.75** | Native, with a real limit: preview, one kind of work, or a bounded group of actors. |
+| **0.50** | Official primitives that do it when people arrange them: several persistent actors in one channel or workflow, event triggers plus dashboards, operator memory that carries outcomes into the next run. |
+| **0.25** | It happens only inside one human-started run or one designed workflow: subagents, conditional branches, a group chat. |
+| **0.00** | Absent or unproven. |
+
 ### Type III hard gate
 
 A technology reaches **3.0 only when every Type III criterion scores 1.00 and the complete Type II threshold is also satisfied**.
@@ -277,9 +351,39 @@ A predefined workflow can satisfy important Type II requirements while remaining
 
 An agent having many tools says little about who determines, owns, and coordinates the work.
 
+### Chassis ≠ motor, and a wrap is not a motor
+
+The **motor** is the foundation model. Do not raise or lower the type score because one model is smarter than another.
+
+The **chassis** is the product an organization adopts: surfaces, permissions, threads, jobs, and the first-class configurations it ships. A documented, supported wrap of another agent is part of that chassis as this product exposes it. Rate what a buyer can do while sitting in this product, not the sibling product's own dossier.
+
+A thin wrap that hides half the agent scores lower than the wrapped product. A harness that surfaces the agent loop and adds its own automation can score as high or higher. Generic BYO, MCP, or "you could attach anything" is still **0.25** or below.
+
+### Coverage ≠ type
+
+A marketplace, a shared workspace, or a product that many functions can use does not move the type score. Those facts belong on the Execution Scale. Type asks who executes the work that already fits.
+
 ### Human approval ≠ lack of autonomy
 
 Approvals, escalation boundaries, and governance controls are compatible with Type II and Type III when humans are handling exceptions rather than routine execution.
+
+### Defining the process ≠ executing it
+
+A person, a publisher, a template, or the product's own builder may define the process. That is the Type II mandate. Grade who executes each instance, not who wrote the definition.
+
+### Count each gap once
+
+One missing fact lowers the one criterion it belongs to. Do not charge it again elsewhere.
+
+| Fact | Where it counts | Where it does not |
+| ---- | --------------- | ----------------- |
+| The unit of work is a task, not a process | II.1 | II.2, II.3 |
+| Optional or exception-only approval steps | II.5 (as a strength) | II.2 |
+| Tools were granted or bound at setup | nowhere | II.3 |
+| Humans keep admin over the actor | II.5, III.6 (as governance) | II.4 |
+| The process graph was written by people | III.2, III.5 | II.1, II.2 |
+| A person authored the trigger rule | nowhere | II.6 |
+| The product has a marketplace or builder | Execution Scale | any type criterion |
 
 ## 8. Calculate the score
 
@@ -313,13 +417,19 @@ Calculate:
 
 `raw_progress = arithmetic mean of the next Type criterion grades`
 
-Then apply a weakest-link penalty:
+Then apply a weakest-link penalty proportional to that progress:
 
-`penalty = 0.25 × (1 - lowest criterion grade)`
+`penalty = 0.25 × (1 - lowest criterion grade) × raw_progress`
 
 `adjusted_progress = raw_progress - penalty`
 
 Clamp adjusted progress to the range `0.00–0.99`.
+
+The penalty removes at most a quarter of the progress. It never erases real progress. Examples:
+
+* Five criteria at 1.00 and one at 0.75: raw 0.96, penalty 0.06, adjusted 0.90.
+* Two criteria at 0.50 and four at 0.25: raw 0.33, penalty 0.06, adjusted 0.27.
+* Every criterion at 0.00: adjusted 0.00.
 
 Then:
 
@@ -333,7 +443,7 @@ The Intelligence Scale describes operating models, not collections of unrelated 
 
 A product with five strong capabilities and one fundamental missing capability should not appear almost equivalent to a product that natively satisfies the complete Type.
 
-The weakest-link penalty makes ratings conservative while still recognizing meaningful progress.
+The weakest-link penalty makes ratings conservative while still recognizing meaningful progress. Because it is proportional, early primitives toward the next Type still show as a decimal. The integer gates below are what keep an incomplete Type from crossing the line.
 
 ### Hard caps override the formula
 
@@ -371,9 +481,17 @@ For a proposed score above Type II, also ask:
 * Are workflows fundamentally designed by humans and merely executed by AI?
 * Could humans realistically withdraw from routine supervision and remain primarily in governance?
 
+Then challenge every grade below 1.00 the other way:
+
+* Does the grade table for that criterion actually name the limit you found?
+* Is that limit already counted on another criterion?
+* Did you lower a Type II criterion because a person defined the process, granted the tools, or keeps admin rights?
+
 If the evidence is ambiguous, choose the **lower** grade.
 
 Do not award a score because the technology could theoretically reach it with sufficiently capable future models.
+
+Do not zero a wrap because the agent loop lives in another product. Ask what this chassis surfaces of that loop, and what it adds. Do not paste a sibling spec's grades.
 
 Rate the technology that exists now.
 
@@ -422,6 +540,26 @@ Finish with:
 Identify the smallest set of concrete missing native capabilities preventing the technology from crossing the next integer threshold.
 
 Do not provide vague recommendations such as "more autonomy" or "better agents". Name the exact missing Intelligence Scale criteria.
+
+End with a single fenced JSON block and no text after it:
+
+```json
+{
+  "axis": "type",
+  "score": 1.4,
+  "floor": 1,
+  "criteria": {
+    "I.1": 1.0,
+    "I.2": 1.0,
+    "I.3": 1.0,
+    "I.4": 1.0,
+    "I.5": 1.0,
+    "II.1": 0.5
+  }
+}
+```
+
+`score` is the final score to one decimal place. `floor` is the completed floor. `criteria` includes every criterion you graded.
 
 ## 11. Citation requirements
 
