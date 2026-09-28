@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 720" role="img" aria-label="Intelligence Scale quadrant">
+  <title>Intelligence Scale quadrant</title>
+  <desc>Latest snapshot. Horizontal axis is intelligence. Vertical axis is execution coverage.</desc>
+  <rect width="100%" height="100%" fill="#f3efe6"/>
+  <rect x="56" y="56" width="608" height="608" rx="18" fill="#fffcf8" stroke="#ddd4c6"/>
+  <line x1="360.0" y1="56" x2="360.0" y2="664" stroke="#ddd4c6"/>
+  <line x1="56" y1="360.0" x2="664" y2="360.0" stroke="#ddd4c6"/>
+  <text x="208.0" y="84" text-anchor="middle" fill="#5f584e" font-family="Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" letter-spacing="1.2">CHALLENGERS</text>
+  <text x="512.0" y="84" text-anchor="middle" fill="#5f584e" font-family="Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" letter-spacing="1.2">LEADERS</text>
+  <text x="208.0" y="648" text-anchor="middle" fill="#5f584e" font-family="Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" letter-spacing="1.2">NICHE</text>
+  <text x="512.0" y="648" text-anchor="middle" fill="#5f584e" font-family="Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="12" letter-spacing="1.2">VISIONARIES</text>
+  <text x="360.0" y="38" text-anchor="middle" fill="#5f584e" font-family="Iowan Old Style, Palatino, Georgia, serif" font-size="15">Coverage</text>
+  <text x="360.0" y="704" text-anchor="middle" fill="#5f584e" font-family="Iowan Old Style, Palatino, Georgia, serif" font-size="15">Intelligence</text>
+
+</svg>
