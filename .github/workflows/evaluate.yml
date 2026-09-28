@@ -21,6 +21,15 @@ jobs:
         run: python scripts/rate.py --print-matrix
       - id: meta
         run: echo "run_id=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+      - name: Check Copilot token
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+        run: |
+          if [ -z "$COPILOT_GITHUB_TOKEN" ]; then
+            echo "Repository secret COPILOT_GITHUB_TOKEN is empty or missing."
+            echo "The name must be exactly COPILOT_GITHUB_TOKEN, not COPILOT_GITHUB_SECRET."
+            exit 1
+          fi
 
   evaluate:
     needs: setup

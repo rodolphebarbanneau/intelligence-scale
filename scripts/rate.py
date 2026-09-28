@@ -47,6 +47,9 @@ def main() -> int:
         print_matrix(args.models_file)
         return 0
 
+    if not (os.environ.get("COPILOT_GITHUB_TOKEN") or "").strip():
+        os.environ.pop("COPILOT_GITHUB_TOKEN", None)
+
     run_id = args.run_id or timestamp_id()
     models = load_models(args.models_file)
     if args.aggregate:
@@ -154,7 +157,11 @@ def unique_urls(*parts: str) -> list[str]:
     seen = set()
     for part in parts:
         for match in re.findall(r"https?://[^\s)>\]]+", part):
-            url = match.rstrip(".,;")
+            url = match.rstrip(".,;:!?`\"'")
+            if "{" in url or "}" in url:
+                continue
+            if "://" not in url or url.endswith("://"):
+                continue
             if url not in seen:
                 seen.add(url)
                 found.append(url)
@@ -168,9 +175,18 @@ def evaluate_model(run_id: str, model: str, specs: list[dict]) -> None:
     for spec in specs:
         row = {"slug": spec["slug"], "name": spec["name"], "url": spec["url"]}
         for axis in AXES:
-            row[axis] = run_axis(model, spec, axis)
+            result = run_axis(model, spec, axis)
+            row[axis] = result
+            if is_fatal_cli_error(result):
+                evaluations.append(row)
+                write_partial(run_id, model, git, created, evaluations)
+                raise SystemExit(result["error"].splitlines()[0])
         evaluations.append(row)
         print(f"{model} {spec['slug']} done", flush=True)
+    write_partial(run_id, model, git, created, evaluations)
+
+
+def write_partial(run_id: str, model: str, git: str, created: str, evaluations: list[dict]) -> None:
     payload = {"model": model, "created": created, "git": git, "evaluations": evaluations}
     path = partial_path(run_id, model)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -189,14 +205,9 @@ def run_axis(model: str, spec: dict, axis: str) -> dict:
         "The last thing you output must be the JSON block required by the skill.\n"
     )
     try:
-        completed = subprocess.run(
-            copilot_command(model, prompt, spec["urls"]),
-            cwd=ROOT,
-            capture_output=True,
-            text=True,
-            timeout=900,
-            check=False,
-        )
+        completed = run_copilot(model, prompt, spec["urls"])
+        if completed.returncode != 0 and "Invalid --allow-url" in (completed.stderr or completed.stdout or ""):
+            completed = run_copilot(model, prompt, [])
     except FileNotFoundError:
         return {"error": "copilot CLI is not installed"}
     except subprocess.TimeoutExpired:
@@ -224,6 +235,22 @@ def run_axis(model: str, spec: dict, axis: str) -> dict:
     if axis == "type" and "floor" in parsed:
         result["floor"] = parsed["floor"]
     return result
+
+
+def run_copilot(model: str, prompt: str, urls: list[str]):
+    return subprocess.run(
+        copilot_command(model, prompt, urls),
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        timeout=900,
+        check=False,
+    )
+
+
+def is_fatal_cli_error(result: dict) -> bool:
+    error = result.get("error") or ""
+    return "No authentication information found" in error
 
 
 def copilot_command(model: str, prompt: str, urls: list[str]) -> list[str]:
@@ -601,6 +628,13 @@ def self_check() -> None:
     assert compound_score(Decimal("3"), Decimal("1")) == 100
     assert compound_score(Decimal("0"), Decimal("1")) == 0
     assert compound_score(Decimal("1.4"), Decimal("0.72")) == 58
+    assert unique_urls("`https://api.x.ai/v1`") == ["https://api.x.ai/v1"]
+    assert unique_urls("https://github.com/anthropics/financial-services`") == [
+        "https://github.com/anthropics/financial-services"
+    ]
+    assert unique_urls("https://api.chatgpt.com/v1/workspace_agents/{id}/trigger") == []
+    assert is_fatal_cli_error({"error": "Error: No authentication information found.\nnext"})
+    assert not is_fatal_cli_error({"error": "could not parse skill JSON"})
 
 
 if __name__ == "__main__":
