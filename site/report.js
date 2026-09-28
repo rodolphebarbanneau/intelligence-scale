@@ -32,6 +32,12 @@ const CRITERIA = {
   "E.7": { name: "Ready-made coverage", blurb: "A team reaches a working job without designing it by hand." },
 };
 
+const ROOT = /(?:^|\/)site\/[^/]*$/.test(location.pathname) ? "../" : "";
+
+function fromRoot(path) {
+  return ROOT + path;
+}
+
 const DOCS = [
   { id: "intelligence-scale", file: "intelligence-scale.md", label: "Intelligence Scale" },
   { id: "execution-scale", file: "execution-scale.md", label: "Execution Scale" },
@@ -129,8 +135,8 @@ async function initIndex() {
   });
   window.addEventListener("resize", () => placeLabels(chart));
 
-  const published = await loadCatalog("../output/index.json");
-  const tests = await loadCatalog("../output/test-index.json");
+  const published = await loadCatalog(fromRoot("output/index.json"));
+  const tests = await loadCatalog(fromRoot("output/test-index.json"));
   if (!published && !tests) {
     status.textContent = "Could not read output/index.json.";
     return;
@@ -204,19 +210,15 @@ async function initIndex() {
       dot.addEventListener("blur", leave);
       const label = document.createElement("span");
       label.className = stacked ? "dot-label is-stack" : "dot-label";
-      if (stacked) {
-        for (const spec of members) {
-          const link = document.createElement("a");
-          link.href = productUrl(id, spec.slug);
-          link.textContent = spec.name || spec.slug;
-          link.addEventListener("pointerenter", enter);
-          link.addEventListener("pointerleave", leave);
-          link.addEventListener("focus", enter);
-          link.addEventListener("blur", leave);
-          label.append(link);
-        }
-      } else {
-        label.textContent = names[0];
+      for (const spec of members) {
+        const link = document.createElement("a");
+        link.href = productUrl(id, spec.slug);
+        link.textContent = spec.name || spec.slug;
+        link.addEventListener("pointerenter", enter);
+        link.addEventListener("pointerleave", leave);
+        link.addEventListener("focus", enter);
+        link.addEventListener("blur", leave);
+        label.append(link);
       }
       wrap.append(dot, label);
       chart.append(wrap);
@@ -591,7 +593,7 @@ async function initProduct() {
         prose.textContent = (spec.type.models[model] && spec.type.models[model].error) || "No written analysis.";
       } else {
         try {
-          const markdown = await fetchText(`../output/${encodeURIComponent(run)}/${report.split("/").map(encodeURIComponent).join("/")}`);
+          const markdown = await fetchText(fromRoot(`output/${encodeURIComponent(run)}/${report.split("/").map(encodeURIComponent).join("/")}`));
           prose.innerHTML = renderMarkdown(markdown);
         } catch (error) {
           prose.textContent = "Could not read the written analysis.";
@@ -733,7 +735,7 @@ async function initDocs() {
     const prose = document.createElement("div");
     prose.className = "prose";
     try {
-      prose.innerHTML = renderMarkdown(await fetchText(`../docs/${encodeURIComponent(doc.file)}`));
+      prose.innerHTML = renderMarkdown(await fetchText(fromRoot(`docs/${encodeURIComponent(doc.file)}`)));
     } catch (error) {
       prose.textContent = `Could not read docs/${doc.file}.`;
     }
@@ -831,7 +833,7 @@ function inline(text) {
 }
 
 function productUrl(run, slug) {
-  return `product.html?run=${encodeURIComponent(run)}&spec=${encodeURIComponent(slug)}`;
+  return fromRoot(`site/product.html?run=${encodeURIComponent(run)}&spec=${encodeURIComponent(slug)}`);
 }
 
 function percent(value, scaleMax) {
@@ -859,7 +861,7 @@ async function loadCatalog(path) {
 }
 
 async function loadRunFile(id) {
-  return fetchJson(`../output/${encodeURIComponent(id)}/ratings.json`);
+  return fetchJson(fromRoot(`output/${encodeURIComponent(id)}/ratings.json`));
 }
 
 async function fetchJson(path) {

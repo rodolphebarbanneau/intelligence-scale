@@ -10,7 +10,7 @@ That includes:
 
 - [`docs/`](docs/)
 - [`skills/`](skills/)
-- [`report/`](report/)
+- [`site/`](site/)
 - [`scripts/`](scripts/)
 
 Open a pull request that explains what changed and why. A change to a skill changes future ratings, so describe how scores would move.

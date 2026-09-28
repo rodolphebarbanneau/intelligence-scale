@@ -20,7 +20,7 @@ def main() -> int:
 
     handler = functools.partial(SimpleHTTPRequestHandler, directory=str(ROOT))
     server = ThreadingHTTPServer(("127.0.0.1", args.port), handler)
-    url = f"http://127.0.0.1:{args.port}/report/index.html"
+    url = f"http://127.0.0.1:{args.port}/"
     print(f"Serving {ROOT} at {url}")
     if not args.no_open:
         webbrowser.open(url)

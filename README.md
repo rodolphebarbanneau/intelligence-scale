@@ -1,8 +1,8 @@
 # Intelligence Scale
 
 <p align="center">
-  <a href="https://rodolphebarbanneau.github.io/intelligence-scale/report/">
-    <img src="docs/quadrant.svg" alt="Latest Intelligence Scale quadrant" width="640">
+  <a href="https://rodolphebarbanneau.github.io/intelligence-scale/">
+    <img src="site/quadrant.svg" alt="Latest Intelligence Scale quadrant" width="640">
   </a>
 </p>
 
@@ -78,7 +78,7 @@ Open skills live in this repository.
 
 ## The report
 
-The [report](https://rodolphebarbanneau.github.io/intelligence-scale/report/) shows the quadrant, the spread of scores across models, and each model's written analysis. Earlier releases stay selectable. To browse a local checkout, run `python scripts/serve.py`.
+The [report](https://rodolphebarbanneau.github.io/intelligence-scale/) shows the quadrant, the spread of scores across models, and each model's written analysis. Earlier releases stay selectable. To browse a local checkout, run `python scripts/serve.py`.
 
 ## Contributing
 

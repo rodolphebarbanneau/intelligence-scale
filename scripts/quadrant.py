@@ -11,21 +11,21 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "output"
-DOCS_SVG = ROOT / "docs" / "quadrant.svg"
+SITE_SVG = ROOT / "site" / "quadrant.svg"
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-id", help="Run folder under output/. Defaults to the latest catalogued run.")
-    parser.add_argument("--docs", action="store_true", help="Also replace docs/quadrant.svg")
-    parser.add_argument("--no-docs", action="store_true", help="Write only the run copy, not docs/quadrant.svg")
+    parser.add_argument("--docs", action="store_true", help="Also replace site/quadrant.svg")
+    parser.add_argument("--no-docs", action="store_true", help="Write only the run copy, not site/quadrant.svg")
     args = parser.parse_args()
     payload, ratings_path = load_run(args.run_id)
     run_svg = ratings_path.with_name("quadrant.svg")
     written = write_quadrant(payload, run_svg)
     publish_docs = args.docs or (not args.no_docs and not safe_id(payload["id"]).startswith("test-"))
     if publish_docs:
-        written.append(write_svg(payload, DOCS_SVG))
+        written.append(write_svg(payload, SITE_SVG))
     for path in written:
         print(f"wrote {path.relative_to(ROOT)}")
     return 0
