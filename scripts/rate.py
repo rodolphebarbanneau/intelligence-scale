@@ -26,6 +26,8 @@ TEST_INDEX_PATH = OUTPUT_DIR / "test-index.json"
 AXES = ("type", "exec")
 SKILL_FOR_AXIS = {"type": "evaluate-type-scale", "exec": "evaluate-exec-scale"}
 GATES = (Decimal("1.0"), Decimal("2.0"), Decimal("3.0"))
+AVAILABLE_TOOLS = ("view", "glob", "grep", "web_fetch")
+EARLY_ABORT_SPECS = 2
 
 
 def main() -> int:
@@ -182,7 +184,14 @@ def evaluate_model(run_id: str, model: str, specs: list[dict]) -> None:
                 write_partial(run_id, model, git, created, evaluations)
                 raise SystemExit(result["error"].splitlines()[0])
         evaluations.append(row)
-        print(f"{model} {spec['slug']} done", flush=True)
+        failed = [axis for axis in AXES if row[axis].get("error")]
+        status = "done" if not failed else f"failed: {row[failed[0]]['error'][:300]}"
+        print(f"{model} {spec['slug']} {status}", flush=True)
+        if len(evaluations) == EARLY_ABORT_SPECS and all(
+            item[axis].get("error") for item in evaluations for axis in AXES
+        ):
+            write_partial(run_id, model, git, created, evaluations)
+            raise SystemExit(f"{model}: the first {EARLY_ABORT_SPECS} specs failed on every axis, stopping")
     write_partial(run_id, model, git, created, evaluations)
 
 
@@ -212,17 +221,17 @@ def run_axis(model: str, spec: dict, axis: str) -> dict:
         return {"error": "copilot CLI is not installed"}
     except subprocess.TimeoutExpired:
         return {"error": "copilot timed out after 900s"}
-    report = assistant_text(completed.stdout)
+    report = completed.stdout or ""
     if completed.returncode != 0 and not report.strip():
-        detail = (completed.stderr or completed.stdout or "copilot failed").strip()
+        detail = (completed.stderr or "copilot failed").strip()
         return {"error": detail[:500]}
     try:
         parsed = extract_json(report)
     except (json.JSONDecodeError, ValueError) as exc:
         detail = (completed.stderr or "").strip()
-        message = f"could not parse skill JSON: {exc}"
+        message = f"could not parse skill JSON: {exc} (exit {completed.returncode}, {len(report)} chars of output)"
         if detail:
-            message = f"{message}; {detail[:240]}"
+            message = f"{message}; stderr: {detail[-500:]}"
         return {"error": message, "report": report}
     score = parsed.get("score")
     if not isinstance(score, (int, float)):
@@ -260,55 +269,17 @@ def copilot_command(model: str, prompt: str, urls: list[str]) -> list[str]:
         prompt,
         "--model",
         model,
-        "--output-format",
-        "json",
+        "--silent",
         "--no-ask-user",
+        # Takes tool names (view, web_fetch), not permission kinds (read, url).
         "--available-tools",
-        "read,url",
+        ",".join(AVAILABLE_TOOLS),
         "--allow-tool",
         "read",
     ]
     if urls:
         command.extend(["--allow-url", ",".join(urls)])
     return command
-
-
-def assistant_text(stdout: str) -> str:
-    chunks = []
-    for line in stdout.splitlines():
-        line = line.strip()
-        if not line.startswith("{"):
-            continue
-        try:
-            event = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        if event.get("type") != "assistant.message":
-            continue
-        data = event.get("data") or {}
-        content = data.get("content")
-        if content is None:
-            content = data.get("text") or ""
-        chunks.append(flatten_content(content))
-    if chunks:
-        return "\n".join(chunk for chunk in chunks if chunk)
-    return stdout
-
-
-def flatten_content(content) -> str:
-    if isinstance(content, str):
-        return content
-    if isinstance(content, list):
-        parts = []
-        for block in content:
-            if isinstance(block, str):
-                parts.append(block)
-            elif isinstance(block, dict):
-                parts.append(str(block.get("text") or block.get("content") or ""))
-        return "\n".join(parts)
-    if isinstance(content, dict):
-        return str(content.get("text") or content.get("content") or "")
-    return str(content or "")
 
 
 def extract_json(report: str) -> dict:
@@ -347,16 +318,18 @@ def write_run(run_id: str, models: list[str]) -> None:
     specs = []
     for slug in sorted(spec_rows):
         base = spec_rows[slug]
-        entry = {"slug": slug, "name": base["name"], "url": base["url"], "draft": bool(drafts.get(slug))}
-        plotted = True
-        for axis in AXES:
-            summary = summarize_axis(axis, models, by_model, slug)
-            entry[axis] = summary
-            if not summary["plotted"]:
-                plotted = False
+        entry: dict[str, Any] = {
+            "slug": slug,
+            "name": base["name"],
+            "url": base["url"],
+            "draft": bool(drafts.get(slug)),
+        }
+        summaries = {axis: summarize_axis(axis, models, by_model, slug) for axis in AXES}
+        entry.update(summaries)
+        plotted = all(summary["plotted"] for summary in summaries.values())
         if plotted:
-            type_score = Decimal(str(entry["type"]["median"]))
-            exec_score = Decimal(str(entry["exec"]["median"]))
+            type_score = Decimal(str(summaries["type"]["median"]))
+            exec_score = Decimal(str(summaries["exec"]["median"]))
             x = (type_score - Decimal("1.5")) / Decimal("1.5")
             y = (exec_score * 2) - Decimal("1")
             entry["x"] = float(x.quantize(Decimal("0.0001"), rounding=ROUND_HALF_DOWN))
@@ -441,6 +414,9 @@ def write_spec_reports(run_dir: Path, spec: dict) -> None:
             sections.append("")
             if result.get("error"):
                 sections.append(result["error"])
+                raw = (result.get("report") or "").strip()
+                if raw:
+                    sections.extend(["", "Raw model output:", "", "```text", raw[-4000:], "```"])
             else:
                 sections.append(narrative(result.get("report") or ""))
             sections.append("")
@@ -635,6 +611,11 @@ def self_check() -> None:
     assert unique_urls("https://api.chatgpt.com/v1/workspace_agents/{id}/trigger") == []
     assert is_fatal_cli_error({"error": "Error: No authentication information found.\nnext"})
     assert not is_fatal_cli_error({"error": "could not parse skill JSON"})
+    command = copilot_command("m", "p", ["https://a.dev"])
+    assert "--output-format" not in command and "--silent" in command
+    assert command[command.index("--available-tools") + 1] == "view,glob,grep,web_fetch"
+    assert command[-2:] == ["--allow-url", "https://a.dev"]
+    assert extract_json('Report text.\n\n```json\n{"score": 1.2}\n```\n') == {"score": 1.2}
 
 
 if __name__ == "__main__":
