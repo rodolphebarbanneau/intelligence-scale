@@ -89,12 +89,13 @@ Several people, and an operator, can work on the same thing.
 
 | Level | Check | Passes when |
 | ----: | ----- | ----------- |
-| 0.25 | `notify` | The product can notify others about AI work or share a link to it. |
+| 0.25 | `notify` | The product can notify other people about AI work, or share a link to it with them. |
 | 0.50 | `team_account` | The product has team or organization accounts where members share a workspace. |
 | 0.75 | `same_run` | Several people can open, continue, or contribute to the same AI conversation, run, or agent. |
 | 1.00 | `live_thread` | People and the AI actor work together live in one shared thread or workspace, see the same state, and hand work off. |
 
 * A chat notification that a run finished is not shared work. A channel where teammates and the operator talk in one thread is, when that thread is the work.
+* Alerts to the same person on another device, or continuing one's own session elsewhere, are not `notify`. It needs another person.
 
 ### E.3 — System reach
 
@@ -119,7 +120,7 @@ Coverage can grow through a catalog the product ships.
 
 | Level | Check | Passes when |
 | ----: | ----- | ----------- |
-| 0.25 | `extensions` | The product supports plugins, extensions, or MCP servers. |
+| 0.25 | `extensions` | The product supports plugins, extensions, or MCP servers that add tools, actions, or content. |
 | 0.50 | `templates_directory` | The product offers official templates or starter agents for more than one job, or an organization-internal directory of agents, skills, or workflows. |
 | 0.75 | `first_party_catalog` | The product ships a first-party catalog or marketplace of installable agents, skills, apps, or workflows. |
 | 1.00 | `not_one_lane` | That catalog is not limited to one craft or one suite. |
@@ -131,6 +132,7 @@ Limits, on top of the common limits:
 
 * E.4 grades the catalog as a way to grow: whether it exists, whether it is limited to one craft or suite, and who can publish. How finished each entry is counts on E.7.
 * Community trust gates, such as a manager confirming an install, do not fail a check.
+* Supporting more model or agent providers is not an extension. An extension adds tools, actions, or content the AI can use.
 
 ### E.5 — Work surfaces
 
@@ -153,7 +155,7 @@ A team can put work on the product without assembling the core system.
 
 | Level | Check | Passes when |
 | ----: | ----- | ----------- |
-| 0.25 | `access` | The spec documents how to get the product: sign-up, install, trial, or a sales contact. |
+| 0.25 | `access` | The spec documents how an organization gets or turns on the product: sign-up, install, trial, a sales or partner engagement, or enabling it in an account it already has. |
 | 0.50 | `start_path` | There is a documented way to start putting work on the product, such as self-serve sign-up, install, trial, or an onboarding guide. |
 | 0.75 | `team_setup` | A team can be set up in the product: invites, roles, shared billing, or workspace setup. |
 | 1.00 | `admin_no_services` | Documented administration and permissions let an organization roll it out without professional services or a custom build. |
@@ -163,6 +165,7 @@ Limits, on top of the common limits:
 * `services_required` caps at **0.25**: The spec states the product works only after professional services, a forward-deployed team, or a custom platform build.
 
 * Missing SSO does not fail a check when a team can still adopt the product. This is not a trust-center or changelog score.
+* A documented start path, team setup, or rollout shows how the product is obtained. When a higher check passes, `access` passes too.
 
 ### E.7 — Ready-made coverage
 
@@ -201,7 +204,7 @@ The scorer computes the score from the grades. You do not.
 
 ```text
 raw = mean of E.1 through E.7
-penalty = 0.25 × (1 − lowest grade)
+penalty = 0.25 × (1 − lowest grade) × raw
 uncapped = clamp(raw − penalty, 0, 1)
 if E.1 is below 0.50, score = min(uncapped, 0.49)
 otherwise score = uncapped

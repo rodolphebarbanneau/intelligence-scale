@@ -67,6 +67,10 @@ def check_rounding() -> None:
     assert compound_score(D("0"), D("1")) == 0
     svg = render_svg({"id": "test-x", "specs": [{"slug": "a", "name": "A & B", "x": 0.5, "y": -0.5, "quadrant": "Visionaries"}]})
     assert "A &amp; B — Visionaries" in svg
+    assert "A &amp; B</text>" in svg
+    assert "TYPE / AGENCY" in svg and "COVERAGE" in svg
+    assert "People execute" in svg and "AI owns" in svg
+    assert 'fill="#101216"' in svg
 
 
 def check_rubrics() -> None:
@@ -100,6 +104,8 @@ def check_rubrics() -> None:
     exec_all["E.1"] = {"some_work": True}
     grades, _ = grade_axis(exec_rubric, exec_all, {key: {} for key in exec_rubric.criteria})
     assert grades["E.1"] == D("0.25") and exec_score(exec_rubric, grades).score == D("0.49")
+    thin = dict(zip(exec_rubric.keys, (D("0.25"), D("0"), D("0.25"), D("0"), D("0.5"), D("0.5"), D("0.25"))))
+    assert exec_score(exec_rubric, thin).score == D("0.19"), "one zero criterion must not erase the others"
 
 
 def check_quotes_and_votes() -> None:

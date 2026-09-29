@@ -45,7 +45,7 @@ Can several people, and an operator, work on the same thing?
 
 | Level | Reached when |
 | --- | --- |
-| **0.25** | The product can notify others or share a link. |
+| **0.25** | The product can notify other people or share a link with them. |
 | **0.50** | Team or organization accounts share a workspace. |
 | **0.75** | Several people can open, continue, or contribute to the same conversation, run, or agent. |
 | **1.00** | People and the AI actor work live in one shared thread, see the same state, and hand work off. |
@@ -69,7 +69,7 @@ Can coverage grow through a catalog the product ships? How finished each entry i
 
 | Level | Reached when |
 | --- | --- |
-| **0.25** | It supports plugins, extensions, or MCP servers. |
+| **0.25** | It supports plugins, extensions, or MCP servers that add tools, actions, or content. More model or agent providers do not count. |
 | **0.50** | It offers official templates or starter agents for several jobs, or an internal directory. |
 | **0.75** | It ships a first-party catalog of installable agents, skills, apps, or workflows. |
 | **1.00** | That catalog is not limited to one craft or suite, and third parties or customers can publish into it. |
@@ -95,7 +95,7 @@ Can a team put that work on the product as it ships, without assembling the core
 
 | Level | Reached when |
 | --- | --- |
-| **0.25** | The spec says how to get the product. |
+| **0.25** | The spec says how an organization gets or turns on the product, including a sales engagement or enabling it in an account it already has. |
 | **0.50** | There is a documented way to start: sign-up, install, trial, or an onboarding guide. |
 | **0.75** | A team can be set up: invites, roles, shared billing, or workspace setup. |
 | **1.00** | Documented administration and permissions let an organization roll it out without services or a custom build. |
@@ -130,11 +130,11 @@ One missing fact lowers the one criterion it belongs to. It is not charged again
 
 ## The score
 
-The raw score is the arithmetic mean of E.1 through E.7. One weak criterion cannot be averaged away. The penalty is a quarter of the gap between a full mark and the lowest grade. When domain span is below **0.50**, the published score is also capped below the midline.
+The raw score is the arithmetic mean of E.1 through E.7, reduced in proportion to the weakest criterion, as on the Intelligence Scale. The reduction removes at most a quarter of the raw score, when the weakest grade is **0.00**. One weak criterion cannot be averaged away, and one missing criterion does not erase the coverage the others show. When domain span is below **0.50**, the published score is also capped below the midline.
 
 ```text
 raw = arithmetic mean of E.1 through E.7
-penalty = 0.25 × (1 − lowest grade)
+penalty = 0.25 × (1 − lowest grade) × raw
 uncapped = clamp(raw − penalty, 0, 1)
 if E.1 is below 0.50, score = min(uncapped, 0.49)
 otherwise score = uncapped

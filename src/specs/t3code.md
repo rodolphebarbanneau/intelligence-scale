@@ -4,7 +4,7 @@ slug: t3code
 url: https://t3.codes/
 docs: https://github.com/pingdotgg/t3code/tree/main/docs
 kind: product
-reviewed: 2026-09-28
+reviewed: 2026-09-29
 ---
 
 # T3 Code
@@ -115,7 +115,9 @@ Primary source: https://github.com/pingdotgg/t3code/blob/main/docs/user/composer
 - A message can attach up to 100 files. Each image can be up to 10 MiB, with at most 80 MiB of images in one message. Other files, including videos, can be up to 50 MiB each.
 - A video attachment gives the agent a file path. It does not enable native video input.
 - On mobile, files can be sent through another app's system share sheet. HEIC and HEIF photos convert to JPEG.
-- On web and desktop, a message sent during a running turn waits as a dashed bubble and goes out after the next tool call or when the turn ends. **Follow-up behavior** chooses **Queue** or **Steer**.
+- On web and desktop, a message sent during a running turn waits as a dashed bubble and goes out after the next tool call or when the turn ends. **Follow-up behavior** chooses **Queue** or **Steer**. **Steer** sends new messages into the running turn immediately.
+- **Stop** halts the running turn and returns every queued message to the composer.
+- A turn runs the provider's own agent loop, not a single reply. Claude Code, for example, decides what each step requires from what it learned in the previous step, chaining many tool calls and course-correcting until it ends the turn. T3 Code shows each tool call in the thread. Source: https://code.claude.com/docs/en/how-claude-code-works
 - Mobile keeps local copies of draft attachments so messages can be queued while disconnected. Drafts and queued messages survive app restarts.
 - **Settings → Providers → Models** adds an unlisted model on web and desktop. Antigravity uses its account catalog and does not support custom models.
 - T3 Code remembers provider, model, and model options for new threads. A project's configured model takes precedence.
@@ -360,6 +362,7 @@ Primary source: https://github.com/pingdotgg/t3code/blob/main/docs/user/open-sou
 - https://github.com/pingdotgg/t3code/blob/main/docs/user/providers-opencode.md
 - https://github.com/pingdotgg/t3code/blob/main/docs/user/providers-antigravity.md
 - https://github.com/pingdotgg/t3code/blob/main/docs/internals/overview.md
+- https://code.claude.com/docs/en/how-claude-code-works
 - https://t3.codes/schema/t3.json
 - https://github.com/pingdotgg/t3code/blob/main/README.md
 - https://github.com/pingdotgg/t3code/blob/main/LICENSE

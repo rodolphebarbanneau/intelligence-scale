@@ -5,13 +5,14 @@ import json
 import os
 import sys
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Literal, cast
 
 os.environ.setdefault("PYDANTIC_AI_NO_BANNER", "1")
 
-from pydantic_ai import Agent, ModelRetry, RunContext
+from pydantic_ai import Agent, ModelRetry, NativeOutput, RunContext, ToolOutput
 from pydantic_ai.exceptions import ModelAPIError, ModelHTTPError, UnexpectedModelBehavior, UsageLimitExceeded
-from pydantic_ai.messages import ModelMessage, ModelResponse, ToolCallPart
+from pydantic_ai.messages import ModelMessage, ModelResponse, TextPart, ToolCallPart
+from pydantic_ai.models import Model, infer_model
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 from pydantic_ai.models.openrouter import OpenRouterModelSettings
 
@@ -78,10 +79,19 @@ def dry_answer(axis: str) -> AxisAnswer:
 
 def dry_model(axis: str) -> FunctionModel:
     def respond(_messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
-        tool = info.output_tools[0].name
-        return ModelResponse(parts=[ToolCallPart(tool, dry_answer(axis).model_dump())])
+        answer = dry_answer(axis)
+        if info.output_tools:
+            return ModelResponse(parts=[ToolCallPart(info.output_tools[0].name, answer.model_dump())])
+        return ModelResponse(parts=[TextPart(answer.model_dump_json())])
 
     return FunctionModel(respond, model_name=DRY_RUN)
+
+
+def output_spec(model: Model) -> NativeOutput[AxisAnswer] | ToolOutput[AxisAnswer]:
+    # Tool output forces `tool_choice`, which always-thinking models such as Claude Sonnet 5.5 reject with a 400.
+    if model.profile.get("supports_json_schema_output", False):
+        return NativeOutput[AxisAnswer](AxisAnswer)
+    return ToolOutput[AxisAnswer](AxisAnswer)
 
 
 def build_agent(model: str, axis: str, reasoning: str | None) -> Agent[Deps, AxisAnswer]:
@@ -92,10 +102,10 @@ def build_agent(model: str, axis: str, reasoning: str | None) -> Agent[Deps, Axi
             settings["openrouter_reasoning"] = {"effort": EFFORTS[reasoning]}
         except KeyError:
             raise ScaleError(f"unknown reasoning effort {reasoning!r}") from None
-    target = dry_model(axis) if model == DRY_RUN else model_ref(model)
+    target = dry_model(axis) if model == DRY_RUN else infer_model(model_ref(model))
     agent = Agent[Deps, AxisAnswer](
         target,
-        output_type=AxisAnswer,
+        output_type=output_spec(target),
         instructions=instructions(axis),
         deps_type=Deps,
         retries=2,
@@ -105,7 +115,7 @@ def build_agent(model: str, axis: str, reasoning: str | None) -> Agent[Deps, Axi
     @agent.output_validator
     def validate(ctx: RunContext[Deps], answer: AxisAnswer) -> AxisAnswer:
         missing = missing_ids(rubric, answer)
-        if missing and ctx.retry < 2:
+        if missing and ctx.retry < ctx.max_retries:
             raise ModelRetry("Answer every criterion, check, and limit id. Missing: " + ", ".join(missing[:80]))
         if ctx.retry == 0:
             bad = [
@@ -140,6 +150,24 @@ def response_cost(messages: list[ModelMessage]) -> float | None:
                 continue
         total += float(cost)
     return total if known else None
+
+
+def upstream_error(body: object) -> str:
+    # OpenRouter nests the provider's own JSON error, as a string, under `metadata.raw`.
+    if isinstance(body, str):
+        try:
+            body = json.loads(body)
+        except ValueError:
+            return body
+    if not isinstance(body, dict):
+        return str(body)
+    data = cast("dict[str, object]", body)
+    metadata = data.get("metadata")
+    raw = cast("dict[str, object]", metadata).get("raw") if isinstance(metadata, dict) else None
+    for inner in (raw, data.get("error")):
+        if inner:
+            return upstream_error(inner)
+    return str(data.get("message") or data)
 
 
 async def call_model(agent: Agent[Deps, AxisAnswer], prompt: str, deps: Deps) -> tuple[AxisAnswer, dict]:
@@ -215,7 +243,8 @@ class Runner:
             try:
                 answer, usage = await call_model(agent, prompt, Deps(normalize(spec.text)))
             except ModelHTTPError as exc:
-                message = f"HTTP {exc.status_code} from {model}: {str(exc.body)[:300]}"
+                detail = upstream_error(exc.body) if exc.body is not None else exc.message
+                message = f"HTTP {exc.status_code} from {model}: {detail[:500]}"
                 if exc.status_code in FATAL_STATUS - {400}:
                     self.fatal[model] = message
                 return CallResult(error=message)
@@ -254,7 +283,7 @@ class Runner:
         parts = []
         for axis, result in zip(AXES, pair):
             places = 1 if axis == "type" else 2
-            parts.append(f"{axis} failed: {result['error'][:200]}" if result.get("error") else f"{axis} {result['score']:.{places}f}")
+            parts.append(f"{axis} failed: {result['error'][:300]}" if result.get("error") else f"{axis} {result['score']:.{places}f}")
         cost = sum((result.get("usage") or {}).get("cost_usd") or 0 for result in pair)
         print(f"{model} {spec.slug}: {', '.join(parts)} (${cost:.3f})", flush=True)
 

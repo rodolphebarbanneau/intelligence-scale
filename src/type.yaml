@@ -93,6 +93,8 @@ criteria:
   I.4:
     name: Human direction and review
     definition: People can start, inspect, approve, correct, and continue AI work while owning the broader process.
+    guidance:
+      - "Correcting, editing, or steering work that is under way passes `correct_continue`: correcting a live response, sending a message into a running turn, or rewinding and continuing from an earlier point. Discarding a result and asking again does not."
     levels:
       "0.25":
         - id: start_see

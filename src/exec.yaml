@@ -53,10 +53,11 @@ criteria:
     definition: Several people, and an operator, can work on the same thing.
     guidance:
       - "A chat notification that a run finished is not shared work. A channel where teammates and the operator talk in one thread is, when that thread is the work."
+      - "Alerts to the same person on another device, or continuing one's own session elsewhere, are not `notify`. It needs another person."
     levels:
       "0.25":
         - id: notify
-          q: "The product can notify others about AI work or share a link to it."
+          q: "The product can notify other people about AI work, or share a link to it with them."
       "0.50":
         - id: team_account
           q: "The product has team or organization accounts where members share a workspace."
@@ -97,10 +98,11 @@ criteria:
     guidance:
       - "E.4 grades the catalog as a way to grow: whether it exists, whether it is limited to one craft or suite, and who can publish. How finished each entry is counts on E.7."
       - "Community trust gates, such as a manager confirming an install, do not fail a check."
+      - "Supporting more model or agent providers is not an extension. An extension adds tools, actions, or content the AI can use."
     levels:
       "0.25":
         - id: extensions
-          q: "The product supports plugins, extensions, or MCP servers."
+          q: "The product supports plugins, extensions, or MCP servers that add tools, actions, or content."
       "0.50":
         - id: templates_directory
           q: "The product offers official templates or starter agents for more than one job, or an organization-internal directory of agents, skills, or workflows."
@@ -144,10 +146,11 @@ criteria:
     definition: A team can put work on the product without assembling the core system.
     guidance:
       - "Missing SSO does not fail a check when a team can still adopt the product. This is not a trust-center or changelog score."
+      - "A documented start path, team setup, or rollout shows how the product is obtained. When a higher check passes, `access` passes too."
     levels:
       "0.25":
         - id: access
-          q: "The spec documents how to get the product: sign-up, install, trial, or a sales contact."
+          q: "The spec documents how an organization gets or turns on the product: sign-up, install, trial, a sales or partner engagement, or enabling it in an account it already has."
       "0.50":
         - id: start_path
           q: "There is a documented way to start putting work on the product, such as self-serve sign-up, install, trial, or an onboarding guide."

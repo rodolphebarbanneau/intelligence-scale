@@ -315,7 +315,7 @@ def exec_score(rubric: Rubric, grades: dict[str, Decimal]) -> ExecScore:
     values = [grades[key] for key in keys]
     raw = sum(values, ZERO) / Decimal(len(values))
     lowest = min(values)
-    penalty = QUARTER * (ONE - lowest)
+    penalty = QUARTER * (ONE - lowest) * raw
     uncapped = min(max(raw - penalty, ZERO), ONE)
     span = rubric.span_cap
     capped = bool(span and grades[span.key] < span.below)

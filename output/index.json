@@ -1,28 +1,3 @@
 {
-  "runs": [
-    {
-      "id": "v0.1.0-alpha.3",
-      "created": "2026-09-29T04:14:06Z",
-      "git": "35003cece0d5425930504a0df70df229b25c5504",
-      "models": [
-        "grok-4.7"
-      ]
-    },
-    {
-      "id": "v0.1.0-alpha.2",
-      "created": "2026-09-28T23:42:12Z",
-      "git": "b6c5ba069bf7d4be65843ad002441ac4b38fcb88",
-      "models": [
-        "grok-4.7"
-      ]
-    },
-    {
-      "id": "v0.1.0-alpha.1",
-      "created": "2026-09-28T23:30:05Z",
-      "git": "89f31128b8ae50566c3eb3d9e4e0db94c6f51e89",
-      "models": [
-        "grok-4.7"
-      ]
-    }
-  ]
+  "runs": []
 }

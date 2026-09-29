@@ -42,6 +42,7 @@ def drift(reference: dict, partials: list[dict]) -> tuple[list[str], list[str]]:
     failures, rows = [], []
     for partial in partials:
         model = partial["model"]
+        requested = max((int((e.get(axis) or {}).get("samples") or 0) for e in partial["evaluations"] for axis in AXES), default=0)
         for evaluation in partial["evaluations"]:
             expected = reference["specs"].get(evaluation["slug"])
             if not expected:
@@ -52,6 +53,8 @@ def drift(reference: dict, partials: list[dict]) -> tuple[list[str], list[str]]:
                 if got.get("error") or "score" not in got:
                     failures.append(f"{label}: no result ({got.get('error', 'missing')})")
                     continue
+                if int(got.get("samples") or 0) < requested:
+                    failures.append(f"{label}: {got.get('samples')} of {requested} samples, cut short by the budget or errors; rerun it")
                 score_delta = Decimal(str(got["score"])) - Decimal(str(want["score"]))
                 rows.append(f"| {model} | {evaluation['slug']} | {axis} | {want['score']} | {got['score']} | {score_delta:+} |")
                 if abs(score_delta) > tolerance[axis]:

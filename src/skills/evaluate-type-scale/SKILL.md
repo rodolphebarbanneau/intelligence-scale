@@ -125,6 +125,8 @@ People can start, inspect, approve, correct, and continue AI work while owning t
 | 0.75 | `review_before` | A person can review proposed changes or actions before they take effect, such as a plan, a diff, a draft, or an approval prompt. |
 | 1.00 | `correct_continue` | A person can correct or redirect the AI's work and have it continue from where it was, not only start over. |
 
+* Correcting, editing, or steering work that is under way passes `correct_continue`: correcting a live response, sending a message into a running turn, or rewinding and continuing from an earlier point. Discarding a result and asking again does not.
+
 #### I.5 — Repeatable organizational use
 
 The product supports ongoing, repeatable use in real workflows, not one-off demos.

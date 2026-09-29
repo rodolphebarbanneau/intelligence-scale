@@ -1,4 +1,3 @@
-# anthropic/claude-opus-5.5
-# openai/gpt-6-astra
-x-ai/grok-4.7
-# moonshotai/kimi-k3
+anthropic/claude-sonnet-5.5
+openai/gpt-6-sol
+x-ai/grok-4.5
