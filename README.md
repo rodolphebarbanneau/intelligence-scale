@@ -66,10 +66,9 @@ Someone who represents that product can correct a factual error in their own dos
 
 ## Run it locally
 
-Ratings run through [OpenRouter](https://openrouter.ai/), so any model it lists can rate. Install [uv](https://docs.astral.sh/uv/), then:
+Ratings run through [OpenRouter](https://openrouter.ai/), so any model it lists can rate. Install [uv](https://docs.astral.sh/uv/), copy [`.env`](.env.example) to `.env.local`, and put your key there. An exported `OPENROUTER_API_KEY` still wins over the file.
 
 ```sh
-export OPENROUTER_API_KEY=...
 uv run intelligence-scale run --spec cursor --model x-ai/grok-4.7
 ```
 

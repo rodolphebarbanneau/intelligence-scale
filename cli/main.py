@@ -229,6 +229,9 @@ def mock(
 
 
 def main() -> None:
+    from cli.settings import settings
+
+    settings()
     try:
         app(prog_name="intelligence-scale")
     except ScaleError as error:

@@ -5,6 +5,7 @@ import json
 import os
 import sys
 from dataclasses import dataclass, field
+from typing import Literal
 
 os.environ.setdefault("PYDANTIC_AI_NO_BANNER", "1")
 
@@ -23,9 +24,12 @@ from cli.rating.schema import AxisAnswer, CheckAnswer, CriterionAnswer, LimitAns
 from cli.rating.scoring import decide_axis, normalize, verify_quote
 from cli.rating.specs import Spec
 
+ReasoningEffort = Literal["xhigh", "high", "medium", "low", "minimal", "none"]
+
 FATAL_STATUS = {400, 401, 402, 403, 404}
 RETRY_DELAYS = (5, 20, 60)
 DRY_RUN = "dry-run"
+EFFORTS: dict[str, ReasoningEffort] = {value: value for value in ("xhigh", "high", "medium", "low", "minimal", "none")}
 
 
 @dataclass
@@ -83,10 +87,13 @@ def dry_model(axis: str) -> FunctionModel:
 def build_agent(model: str, axis: str, reasoning: str | None) -> Agent[Deps, AxisAnswer]:
     rubric = load_rubric(axis)
     settings = OpenRouterModelSettings(openrouter_usage={"include": True}, timeout=900, max_tokens=24000)
-    if reasoning:
-        settings["openrouter_reasoning"] = {"effort": reasoning}
+    if reasoning is not None:
+        try:
+            settings["openrouter_reasoning"] = {"effort": EFFORTS[reasoning]}
+        except KeyError:
+            raise ScaleError(f"unknown reasoning effort {reasoning!r}") from None
     target = dry_model(axis) if model == DRY_RUN else model_ref(model)
-    agent = Agent(
+    agent = Agent[Deps, AxisAnswer](
         target,
         output_type=AxisAnswer,
         instructions=instructions(axis),
@@ -280,6 +287,10 @@ class Runner:
 
 
 def require_key(models: list[str]) -> None:
+    from cli.settings import settings
+
     needs = [model for model in models if model != DRY_RUN and model_ref(model).startswith("openrouter:")]
-    if needs and not (os.environ.get("OPENROUTER_API_KEY") or "").strip():
-        raise ScaleError("OPENROUTER_API_KEY is not set. Export it, or pass --dry-run to exercise the loop without a model.")
+    if needs and not settings().openrouter_api_key.strip():
+        raise ScaleError(
+            "OPENROUTER_API_KEY is not set. Put it in .env, export it, or pass --dry-run to exercise the loop without a model."
+        )

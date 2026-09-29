@@ -24,7 +24,7 @@ from cli.rating.runner import dry_answer
 from cli.rating.schema import AxisAnswer, CheckAnswer, CriterionAnswer, LimitAnswer
 from cli.rating.scoring import decide_axis, exec_score, grade_axis, grade_from_checks, normalize, round_half_down, type_score, verify_quote
 from cli.rating.specs import is_draft, load_specs
-
+from cli.settings import Settings
 
 def self_check() -> None:
     check_layout()
@@ -45,6 +45,7 @@ def check_layout() -> None:
     assert set(anchors(REFERENCE_PATH)) <= slugs, "calibration anchors must be spec slugs"
     assert catalog_for("v0.1.0") == INDEX_PATH and catalog_for("test-x") == TEST_INDEX_PATH
     assert is_draft({"draft": "true"}) and not is_draft({"draft": "no"}) and not is_draft({})
+    assert isinstance(Settings().openrouter_api_key, str)
 
 
 def check_rounding() -> None:
@@ -135,6 +136,7 @@ def check_quotes_and_votes() -> None:
 def check_agreement() -> None:
     assert krippendorff_interval([[1.0, 1.0], [0.5, 0.5], [0.0, 0.0]]) == 1.0
     assert krippendorff_interval([[1.0]]) is None
-    assert abs(krippendorff_interval([[1.0, 0.0], [0.0, 1.0]]) + 0.5) < 1e-9
+    alpha = krippendorff_interval([[1.0, 0.0], [0.0, 1.0]])
+    assert alpha is not None and abs(alpha + 0.5) < 1e-9
     assert set(AXES) == {"type", "exec"}
     json.dumps(dry_answer("exec").model_dump())
