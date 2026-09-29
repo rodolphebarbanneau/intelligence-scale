@@ -1,65 +1,42 @@
-#!/usr/bin/env python3
-"""Render the latest ratings run as a quadrant SVG."""
+"""Render a ratings run as a quadrant SVG."""
 
 from __future__ import annotations
 
-import argparse
 import json
-import re
 from html import escape
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-OUTPUT = ROOT / "output"
-SITE_SVG = ROOT / "site" / "quadrant.svg"
-
-
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--run-id", help="Run folder under output/. Defaults to the latest catalogued run.")
-    parser.add_argument("--docs", action="store_true", help="Also replace site/quadrant.svg")
-    parser.add_argument("--no-docs", action="store_true", help="Write only the run copy, not site/quadrant.svg")
-    args = parser.parse_args()
-    payload, ratings_path = load_run(args.run_id)
-    run_svg = ratings_path.with_name("quadrant.svg")
-    written = write_quadrant(payload, run_svg)
-    publish_docs = args.docs or (not args.no_docs and not safe_id(payload["id"]).startswith("test-"))
-    if publish_docs:
-        written.append(write_svg(payload, SITE_SVG))
-    for path in written:
-        print(f"wrote {path.relative_to(ROOT)}")
-    return 0
+from cli.errors import ScaleError
+from cli.paths import INDEX_PATH, OUTPUT_DIR, SITE_QUADRANT, TEST_INDEX_PATH, is_test_run, relative, safe_id
 
 
 def load_run(run_id: str | None) -> tuple[dict, Path]:
+    """Load output/<run>/ratings.json, or the most recently catalogued run when no id is given."""
     if run_id:
-        path = OUTPUT / safe_id(run_id) / "ratings.json"
+        path = OUTPUT_DIR / safe_id(run_id) / "ratings.json"
         if not path.exists():
-            raise SystemExit(f"Missing {path.relative_to(ROOT)}")
+            raise ScaleError(f"missing {relative(path)}")
         return json.loads(path.read_text(encoding="utf-8")), path
-    catalogs = []
-    for name in ("index.json", "test-index.json"):
-        path = OUTPUT / name
-        if path.exists():
-            catalogs.append(json.loads(path.read_text(encoding="utf-8")))
     runs = []
-    for catalog in catalogs:
-        runs.extend(catalog.get("runs") or [])
+    for catalog in (INDEX_PATH, TEST_INDEX_PATH):
+        if catalog.exists():
+            runs.extend(json.loads(catalog.read_text(encoding="utf-8")).get("runs") or [])
     runs.sort(key=lambda run: str(run.get("created") or ""), reverse=True)
     if not runs:
-        raise SystemExit("No rating runs found.")
+        raise ScaleError("no rating runs found")
     return load_run(runs[0]["id"])
 
 
-def write_quadrant(payload: dict, path: Path) -> list[Path]:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    return [write_svg(payload, path)]
-
-
-def write_svg(payload: dict, path: Path) -> Path:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(render_svg(payload), encoding="utf-8")
-    return path
+def write_quadrants(payload: dict, ratings_path: Path, docs: bool | None = None) -> list[Path]:
+    """Write the run's quadrant.svg, and site/quadrant.svg too for published runs unless `docs` says otherwise."""
+    targets = [ratings_path.with_name("quadrant.svg")]
+    if docs if docs is not None else not is_test_run(payload["id"]):
+        targets.append(SITE_QUADRANT)
+    svg = render_svg(payload)
+    for path in targets:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(svg, encoding="utf-8")
+    return targets
 
 
 def render_svg(payload: dict) -> str:
@@ -104,14 +81,3 @@ def render_svg(payload: dict) -> str:
 {chr(10).join(dots)}
 </svg>
 """
-
-
-def safe_id(run_id: str) -> str:
-    cleaned = re.sub(r"[^A-Za-z0-9._-]+", "_", run_id)
-    if cleaned in {"", ".", ".."}:
-        raise SystemExit(f"unsafe run id {run_id!r}")
-    return cleaned
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

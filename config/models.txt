@@ -1,4 +1,0 @@
-# claude-opus-5.5
-# gpt-6-astra
-grok-4.7
-# kimi-k3

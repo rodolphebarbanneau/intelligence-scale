@@ -51,16 +51,46 @@ Each release asks several models to rate every product. The dot is the **median*
 
 ## How a product is rated
 
-The folder [`specs/`](specs/) holds one sourced dossier per product. A dossier describes what the product is and lists its features, preferring the official docs site. It does not contain a score.
+The folder [`src/specs/`](src/specs/) holds one sourced dossier per product. A dossier describes what the product is and lists its features, preferring the official docs site. It does not contain a score.
 
 A published release then rates every dossier with two open skills:
 
-- the [type evaluator](skills/evaluate-type-scale/), from 0.0 to 3.0
-- the [execution evaluator](skills/evaluate-exec-scale/), from 0.00 to 1.00
+- the [type evaluator](src/skills/evaluate-type-scale/), from 0.0 to 3.0
+- the [execution evaluator](src/skills/evaluate-exec-scale/), from 0.00 to 1.00
 
-The evaluators are conservative. A claim without a source stays unproven. Marketing language does not raise a score. They rate the chassis, not the model, and they grade a wrap by what this product surfaces and adds.
+Models do not pick grades. Each one reads only the dossier, with no browsing, and answers the yes/no checks in the [type rubric](src/type.yaml) and the [execution rubric](src/exec.yaml), quoting the dossier for every check it passes. The scorer in [`cli/rating/`](cli/rating/) rejects quotes it cannot find, derives each grade from the checks, applies the caps and gates, and computes both scores. Every model sees the same evidence, so runs can be compared.
+
+The evaluators are conservative. A fact the dossier does not state fails its check. Marketing language passes nothing. They rate the chassis, not the model, and they grade a wrap by what this product surfaces and adds.
 
 Someone who represents that product can correct a factual error in their own dossier. The next release reads the correction and rates the product again.
+
+## Run it locally
+
+Ratings run through [OpenRouter](https://openrouter.ai/), so any model it lists can rate. Install [uv](https://docs.astral.sh/uv/), then:
+
+```sh
+export OPENROUTER_API_KEY=...
+uv run intelligence-scale run --spec cursor --model x-ai/grok-4.7
+```
+
+Every Python tool in this repository is a command of that one CLI, under [`cli/`](cli/). Run `uv run intelligence-scale --help`, or `--help` after any command, for the full list of options.
+
+A run without `--run-id` gets a `test-` id. It writes `output/test-…/` and stays out of the published index. Useful options:
+
+- `--samples 3` asks each model three times and keeps a check only when most samples pass it.
+- `--max-cost 5` stops starting new calls after five US dollars.
+- `--dry-run` swaps the model for a stand-in that fails every check, with no key and no cost.
+
+Other commands:
+
+- `calibrate --run-id <id>` compares a run of the anchor specs (`run --anchors`) with the expected grades in [`src/config/reference.json`](src/config/reference.json) and reports agreement between models.
+- `aggregate --run-id <id>` rebuilds `output/<id>/` from the partials in `temp/<id>/`.
+- `score answer.json --axis type --spec <slug>` scores check answers written by hand or by another assistant.
+- `render-rubrics` writes the rubrics into the evaluator skills. `self-check` runs the built-in checks.
+- `quadrant` renders a run as a quadrant SVG. `serve` browses the report locally.
+- `mock` writes the one-model fixture run that the calibration anchors come from.
+
+The GitHub workflow runs the same CLI. Publishing a release rates every published spec with the models in [`src/config/models.txt`](src/config/models.txt) and commits the output. A manual run can rate a subset in test mode, or calibrate, without committing anything.
 
 ## Docs
 
@@ -72,13 +102,13 @@ Someone who represents that product can correct a factual error in their own dos
 
 Open skills live in this repository.
 
-- [Create spec](skills/create-spec/) writes a sourced dossier and does not rate the product.
-- [Evaluate type scale](skills/evaluate-type-scale/) rates the chassis on how far operational agency can shift from people to AI.
-- [Evaluate exec scale](skills/evaluate-exec-scale/) rates the chassis on how much of a company's work the product can carry as it ships.
+- [Create spec](src/skills/create-spec/) writes a sourced dossier and does not rate the product.
+- [Evaluate type scale](src/skills/evaluate-type-scale/) rates the chassis on how far operational agency can shift from people to AI.
+- [Evaluate exec scale](src/skills/evaluate-exec-scale/) rates the chassis on how much of a company's work the product can carry as it ships.
 
 ## The report
 
-The [report](https://rodolphebarbanneau.github.io/intelligence-scale/) shows the quadrant, the spread of scores across models, and each model's written analysis. Earlier releases stay selectable. To browse a local checkout, run `python scripts/serve.py`.
+The [report](https://rodolphebarbanneau.github.io/intelligence-scale/) shows the quadrant, the spread of scores across models, and each model's written analysis. Earlier releases stay selectable. To browse a local checkout, run `uv run intelligence-scale serve`.
 
 ## Contributing
 

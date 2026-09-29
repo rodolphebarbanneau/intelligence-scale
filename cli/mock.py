@@ -1,20 +1,29 @@
-#!/usr/bin/env python3
-"""One-model mock run. Rates every dossier and writes a rate.py partial under a test- id."""
+"""One-model mock run. Rates every dossier at criterion level and writes a rating partial under a test- id.
+
+The grades are a fixture. The shared scorer in cli/rating/ applies the cross-criterion caps, gates, and formulas.
+The calibration anchors in src/config/reference.json come from this fixture.
+"""
 
 from __future__ import annotations
 
 import json
-from decimal import Decimal, ROUND_HALF_DOWN
-from pathlib import Path
+from decimal import Decimal
 
-ROOT = Path(__file__).resolve().parents[1]
-SPECS = ROOT / "specs"
+from cli.errors import ScaleError
+from cli.paths import REFERENCE_PATH, partial_path, relative
+from cli.rating.rubric import load_rubric
+from cli.rating.scoring import apply_cross_caps, exec_score, interpret, type_score
+from cli.rating.specs import load_specs
+
 RUN_ID = "test-2026-09-28"
 MODEL = "grok-4.7"
 DATE = "28 September 2026"
+ANCHORS = ("agentforce", "cursor", "notion", "sierra", "t3code")
 
-TYPE_KEYS = [f"I.{i}" for i in range(1, 6)] + [f"II.{i}" for i in range(1, 7)] + [f"III.{i}" for i in range(1, 7)]
-EXEC_KEYS = [f"E.{i}" for i in range(1, 8)]
+TYPE_RUBRIC = load_rubric("type")
+EXEC_RUBRIC = load_rubric("exec")
+TYPE_KEYS = TYPE_RUBRIC.keys
+EXEC_KEYS = EXEC_RUBRIC.keys
 ALLOWED = {Decimal(x) for x in ("0", "0.25", "0.50", "0.75", "1")}
 
 
@@ -22,33 +31,14 @@ def D(text: str) -> Decimal:
     return Decimal(text)
 
 
-def rnd(value: Decimal, places: int) -> Decimal:
-    return value.quantize(Decimal("1").scaleb(-places), rounding=ROUND_HALF_DOWN)
-
-
 def num(value: Decimal, places: int) -> float:
     return float(f"{value:.{places}f}")
-
-
-def is_draft(meta: dict) -> bool:
-    return str(meta.get("draft") or "").strip().lower() in {"true", "yes", "1"}
-
-
-def frontmatter(slug: str) -> dict:
-    text = (SPECS / f"{slug}.md").read_text(encoding="utf-8")
-    end = text.find("\n---\n", 4)
-    meta = {}
-    for line in text[4:end].splitlines():
-        key, sep, value = line.partition(":")
-        if sep:
-            meta[key.strip()] = value.strip().strip("\"'")
-    return meta
 
 
 def row(grade: str, evidence: str, source: str) -> tuple:
     value = D(grade)
     if value not in ALLOWED:
-        raise SystemExit(f"bad grade {grade}")
+        raise ScaleError(f"bad grade {grade}")
     return value, evidence, source
 
 
@@ -59,7 +49,7 @@ def zeros(source: str, evidence: str = "The cited pages do not establish this.")
 def pack(items: dict) -> dict:
     missing = [key for key in TYPE_KEYS if key not in items]
     if missing:
-        raise SystemExit(f"missing type keys {missing}")
+        raise ScaleError(f"missing type keys {missing}")
     return items
 
 
@@ -108,18 +98,18 @@ S = {
     "t3code-bg": "https://github.com/pingdotgg/t3code/blob/main/docs/user/background-service.md",
     "t3code-git": "https://github.com/pingdotgg/t3code/blob/main/docs/user/source-control.md",
     "t3code-remote": "https://github.com/pingdotgg/t3code/blob/main/docs/user/remote-access.md",
-    "plateforme": "specs/plateforme.md",
+    "plateforme": "src/specs/plateforme.md",
 }
 
 
 def T(slug: str, grades: dict, summary: str, gap: str) -> dict:
-    return {"rows": pack(grades), "summary": summary, "gap": gap}
+    return {"rows": pack({**grades, **OVERRIDES.get(slug, {})}), "summary": summary, "gap": gap}
 
 
 def E(grades: dict, summary: str, gap: str) -> dict:
     missing = [key for key in EXEC_KEYS if key not in grades]
     if missing:
-        raise SystemExit(f"missing exec keys {missing}")
+        raise ScaleError(f"missing exec keys {missing}")
     return {"rows": grades, "summary": summary, "gap": gap}
 
 
@@ -128,6 +118,93 @@ def coding_iii(source: str, coordination: tuple | None = None) -> dict:
     if coordination:
         base["III.3"] = coordination
     return base
+
+
+# Rows regraded against src/type.yaml: II.7 for every product, II.1 where a trigger rule repeats the same job,
+# II.4 where a durable named actor has product-managed memory, and the redefined III.1 and III.6.
+OVERRIDES = {
+    "cursor": {
+        "II.1": row("0.50", "Automations start Cloud Agents on cron, GitHub, Slack, and Linear events, so the same coding job repeats without a person handing over each run. No named actor is assigned a process or takes cases from its own intake.", S["cursor"]),
+        "II.7": row("0.50", "A Cloud Agent builds, tests, and opens a pull request with no person between those stages. Merging and shipping the change stay with people.", S["cursor"]),
+    },
+    "codex": {
+        "II.1": row("0.50", "Scheduled tasks, GitHub auto-review, and Linear assignment start the same coding work repeatedly. No named actor owns a process.", S["codex"]),
+        "II.7": row("0.50", "A cloud run edits, tests, and returns a diff or pull request with no person between stages. Merging stays with people.", S["codex"]),
+    },
+    "claude-code": {
+        "II.1": row("0.50", "Desktop scheduled tasks rerun a coding session on a cadence, and Routines are research preview. No named actor owns a process.", S["claude-code"]),
+        "II.7": row("0.50", "A session gathers context, edits, and verifies without per-step prompting. The change still lands as a commit or pull request a person merges.", S["claude-code"]),
+    },
+    "devin": {
+        "II.1": row("0.50", "Automations start sessions from Slack, GitHub, Linear, cron, or webhooks. Each session is still one coding task, with no named actor owning a process.", S["devin"]),
+        "II.7": row("0.50", "A session codes, tests, and opens a pull request without a person orchestrating each command. Merging stays with people.", S["devin"]),
+    },
+    "github-copilot": {
+        "II.1": row("0.50", "Automations start cloud agent on schedules or issue events. The owned unit is still one task ending in one pull request.", S["github-copilot"]),
+        "II.7": row("0.50", "The agent edits and tests in Actions, then opens a pull request. People review and merge it.", S["github-copilot"]),
+    },
+    "replit": {
+        "II.1": row("0.50", "Routines rerun work hourly, daily, or weekly from a chat. They are personal, and no named actor owns a process.", S["replit"]),
+        "II.7": row("0.50", "Agent implements and runs App Testing without a person between steps. Routines cannot schedule publishing, so shipping stays with people.", S["replit"]),
+    },
+    "grok-build": {
+        "II.7": row("0.50", "Always-approve runs and workflows edit files and run commands through a coding task. The spec does not show the change delivered without a person.", S["grok-build"]),
+    },
+    "t3code": {
+        "II.7": row("0.50", "A thread progresses a coding task in its worktree, and source control can commit and push. A person still starts each thread and lands the change.", S["t3code-git"]),
+    },
+    "grok-bot": {
+        "II.7": row("0.50", "Routines and computer-use turns run their steps with the app closed. Many writes land as Send cards a person confirms, and starter guidance has people review drafts.", S["grok-bot"]),
+    },
+    "chatgpt": {
+        "II.1": row("0.50", "Scheduled tasks rerun a saved prompt in the background. Chat itself is person-steered, and no actor owns a process.", S["chatgpt-use"]),
+        "II.7": row("0.25", "A chat turn or scheduled task returns a finished answer or file. A person moves the work to its next stage.", S["chatgpt-use"]),
+    },
+    "claude": {
+        "II.1": row("0.25", "A person can hand Claude a request or a Research task and get a finished result. Nothing repeats without a person.", S["claude"]),
+        "II.7": row("0.25", "A chat or Research run returns a finished answer or artifact. A person carries it further.", S["claude"]),
+    },
+    "gemini": {
+        "II.1": row("0.50", "Scheduled actions rerun a prompt on a schedule. Gemini Apps is otherwise person-steered, and Spark is experimental.", S["gemini"]),
+        "II.7": row("0.25", "A chat, Deep Research, or scheduled action returns a finished answer or report. A person moves the work on.", S["gemini"]),
+    },
+    "grok": {
+        "II.1": row("0.25", "A person can hand the assistant a request and get a finished answer. No schedules or triggers are specified.", S["grok"]),
+        "II.7": row("0.25", "A conversation returns a finished answer. A person moves the work on.", S["grok"]),
+    },
+    "chatgpt-work": {
+        "II.7": row("0.50", "A published agent runs its configured steps without anyone typing each one. The spec does not show routine cases delivered to their final outcome in a system of record.", S["chatgpt-work"]),
+    },
+    "claude-cowork": {
+        "II.1": row("0.50", "Scheduled tasks rerun Cowork work on a cadence while the computer sleeps. Each run is its own session, not a named actor owning a process.", S["claude-cowork"]),
+        "II.7": row("0.50", "Inside a task Claude progresses through several steps with no person between them. The spec does not show routine outcomes delivered without a person.", S["claude-cowork"]),
+    },
+    "microsoft-365-copilot": {
+        "II.1": row("0.50", "Scheduled prompts and Cowork scheduled or event-driven tasks rerun work without a person starting each run. No named actor owns a process.", S["m365"]),
+        "II.7": row("0.50", "Cowork progresses a multi-step plan across mail, files, and meetings, asking before sensitive actions. The spec does not show routine outcomes closed without a person.", S["m365-cowork"]),
+    },
+    "notion": {
+        "II.7": row("0.50", "A Custom Agent runs its trigger's steps across pages, databases, and mail. The spec does not show routine cases carried to their final outcome.", S["notion"]),
+    },
+    "dust": {
+        "II.7": row("0.50", "A triggered run progresses through its tool calls with no person between steps. The spec does not show routine cases delivered to their final outcome.", S["dust-triggers"]),
+    },
+    "glean": {
+        "II.7": row("0.50", "Auto mode and workflow mode run their steps toward an outcome. Web write actions wait for confirmation unless admins allow unattended writes.", S["glean"]),
+    },
+    "agentforce": {
+        "II.7": row("0.25", "Atlas may chain actions inside one conversation. Help does not show a case carried to its final outcome.", S["agentforce"]),
+    },
+    "sierra": {
+        "II.4": row("0.75", "The brand agent persists across conversations and channels, with Context Engine memory the product manages. It is not its own principal with its own credentials.", S["sierra-horizon"]),
+        "II.7": row("0.75", "Journeys such as a claim or renewal are carried to an outcome, and escalation handles exceptions. The spec does not show that across every routine case type.", S["sierra-horizon"]),
+    },
+    "plateforme": {
+        "II.7": row("0.50", "An Action moves a released workflow from queued to completed across agents, operators, and applications. The spec does not state that routine cases end with the business outcome recorded in the system of record.", S["plateforme"]),
+        "III.1": row("0.25", "Operators and Actions start on triggers and run without anyone typing. The spec does not show a whole process running unattended to its final outcome.", S["plateforme"]),
+        "III.6": row("0.75", "Budgets, caps, permissions, and grants are enforced on operators, and the audit log records activity. The spec does not show irreversible actions gated apart from routine ones, or audits of AI decisions against policy.", S["plateforme"]),
+    },
+}
 
 
 RATINGS = {
@@ -890,62 +967,15 @@ RATINGS = {
         ),
     },
 }
-def type_score(rows: dict) -> tuple[int, Decimal, Decimal, Decimal, Decimal]:
-    values = {key: rows[key][0] for key in TYPE_KEYS}
-
-    def band(prefix: str, count: int) -> list[Decimal]:
-        return [values[f"{prefix}.{i}"] for i in range(1, count + 1)]
-
-    type1, type2, type3 = band("I", 5), band("II", 6), band("III", 6)
-    if all(grade == 1 for grade in type2) and all(grade == 1 for grade in type3):
-        return 3, Decimal("3.0"), Decimal("0"), Decimal("0"), Decimal("0")
-    if all(grade == 1 for grade in type2):
-        floor, progress = 2, type3
-    elif all(grade == 1 for grade in type1):
-        floor, progress = 1, type2
-    else:
-        floor, progress = 0, type1
-    raw = sum(progress, Decimal("0")) / Decimal(len(progress))
-    lowest = min(progress)
-    penalty = Decimal("0.25") * (Decimal("1") - lowest) * raw
-    adjusted = raw - penalty
-    if adjusted < 0:
-        adjusted = Decimal("0")
-    if adjusted > Decimal("0.99"):
-        adjusted = Decimal("0.99")
-    score = rnd(Decimal(floor) + adjusted, 1)
-    gate = Decimal(floor + 1)
-    if floor < 3 and score >= gate:
-        score = gate - Decimal("0.1")
-    return floor, score, raw, lowest, penalty
-
-
-def exec_score(rows: dict) -> tuple[Decimal, Decimal, Decimal, Decimal, Decimal]:
-    grades = [rows[key][0] for key in EXEC_KEYS]
-    raw = sum(grades, Decimal("0")) / Decimal(len(grades))
-    lowest = min(grades)
-    penalty = Decimal("0.25") * (Decimal("1") - lowest)
-    uncapped = raw - penalty
-    if uncapped < 0:
-        uncapped = Decimal("0")
-    if uncapped > 1:
-        uncapped = Decimal("1")
-    score = min(uncapped, Decimal("0.49")) if rows["E.1"][0] <= Decimal("0.25") else uncapped
-    return rnd(score, 2), raw, lowest, penalty, uncapped
-
-
-def interpret(floor: int, score: Decimal) -> str:
-    if floor == 0:
-        return "Below Type I."
-    if floor == 1 and score < Decimal("1.5"):
-        return "Type I with early Type II capabilities."
-    if floor == 1:
-        return "Approaching Type II."
-    if floor == 2 and score < Decimal("2.5"):
-        return "Type II with early Type III capabilities."
-    if floor == 2:
-        return "Approaching Type III."
-    return "Type III."
+def capped(rows: dict, rubric) -> dict:
+    """Apply the rubric's cross-criterion caps to the fixture grades and say so in the evidence."""
+    grades = {key: rows[key][0] for key in rubric.keys}
+    notes = apply_cross_caps(rubric, grades)
+    out = dict(rows)
+    for key, items in notes.items():
+        _grade, evidence, source = rows[key]
+        out[key] = (grades[key], f"{evidence} Scorer: {' '.join(items)}", source)
+    return out
 
 
 def table(rows: dict, keys: list[str]) -> str:
@@ -956,21 +986,10 @@ def table(rows: dict, keys: list[str]) -> str:
     return "\n".join(lines)
 
 
-def weakest_names(rows: dict, keys: list[str]) -> str:
-    lowest = min(rows[key][0] for key in keys)
-    names = [key for key in keys if rows[key][0] == lowest]
-    return ", ".join(names)
-
-
 def type_report(slug: str, spec: dict) -> tuple[dict, str]:
-    rows = spec["type"]["rows"]
-    floor, score, raw, lowest, penalty = type_score(rows)
-    adjusted = raw - penalty
-    if adjusted < 0:
-        adjusted = Decimal("0")
-    if adjusted > Decimal("0.99"):
-        adjusted = Decimal("0.99")
-    progress_keys = TYPE_KEYS[:5] if floor == 0 else TYPE_KEYS[5:11] if floor == 1 else TYPE_KEYS[11:]
+    rows = capped(spec["type"]["rows"], TYPE_RUBRIC)
+    scored = type_score(TYPE_RUBRIC, {key: rows[key][0] for key in TYPE_KEYS})
+    floor, score = scored.floor, scored.score
     criteria = {key: num(rows[key][0], 2) for key in TYPE_KEYS}
     body = f"""> **Intelligence Scale capability: {score:.1f} / 3.0**
 
@@ -978,15 +997,15 @@ def type_report(slug: str, spec: dict) -> tuple[dict, str]:
 
 {spec['type']['summary']}
 
-Evaluated {DATE} from `specs/{slug}.md` and the sources it cites. Claims the dossier does not source stay at 0.00.
+Mock fixture for {DATE}, graded at criterion level from `src/specs/{slug}.md`. The shared scorer applies the cross-criterion caps and the formula.
 
 {table(rows, TYPE_KEYS)}
 
 * **Completed floor:** {floor}
-* **Next Type raw progress:** {raw:.2f}
-* **Weakest criterion:** {lowest:.2f} ({weakest_names(rows, progress_keys)})
-* **Weakest-link penalty:** {penalty:.2f}
-* **Adjusted progress:** {adjusted:.2f}
+* **Next Type raw progress:** {scored.raw:.2f}
+* **Weakest criterion:** {scored.lowest:.2f} ({', '.join(scored.weakest) or 'none'})
+* **Weakest-link penalty:** {scored.penalty:.2f}
+* **Adjusted progress:** {scored.adjusted:.2f}
 * **Final score:** **{score:.1f}**
 
 ### What prevents the next Type?
@@ -999,22 +1018,22 @@ Evaluated {DATE} from `specs/{slug}.md` and the sources it cites. Claims the dos
 
 def exec_report(slug: str, spec: dict) -> tuple[dict, str]:
     rows = spec["exec"]["rows"]
-    score, raw, lowest, penalty, uncapped = exec_score(rows)
-    capped = rows["E.1"][0] <= Decimal("0.25")
-    cap_line = "0.49, because E.1 is 0.25 or lower" if capped else "none"
+    scored = exec_score(EXEC_RUBRIC, {key: rows[key][0] for key in EXEC_KEYS})
+    score = scored.score
+    cap_line = "0.49, because E.1 is below 0.50" if scored.span_capped else "none"
     criteria = {key: num(rows[key][0], 2) for key in EXEC_KEYS}
     body = f"""> **Execution coverage: {score:.2f} / 1.00**
 
 {spec['exec']['summary']}
 
-Evaluated {DATE} from `specs/{slug}.md` and the sources it cites.
+Mock fixture for {DATE}, graded at criterion level from `src/specs/{slug}.md`.
 
 {table(rows, EXEC_KEYS)}
 
-* **Raw mean:** {raw:.2f}
-* **Weakest criterion:** {lowest:.2f} ({weakest_names(rows, EXEC_KEYS)})
-* **Weakest-link penalty:** {penalty:.2f}
-* **Uncapped score:** {uncapped:.2f}
+* **Raw mean:** {scored.raw:.2f}
+* **Weakest criterion:** {scored.lowest:.2f} ({', '.join(scored.weakest)})
+* **Weakest-link penalty:** {scored.penalty:.2f}
+* **Uncapped score:** {scored.uncapped:.2f}
 * **Span cap:** {cap_line}
 * **Final score:** **{score:.2f}**
 
@@ -1026,45 +1045,74 @@ Evaluated {DATE} from `specs/{slug}.md` and the sources it cites.
     return payload, body + "\n```json\n" + json.dumps(payload, indent=2) + "\n```\n"
 
 
-def main() -> None:
-    slugs = sorted(path.stem for path in SPECS.glob("*.md"))
-    published = [slug for slug in slugs if not is_draft(frontmatter(slug))]
-    missing = [slug for slug in published if slug not in RATINGS]
+def scored_criteria(payload: dict) -> dict:
+    """Criteria that move the published score: Type I and II always, Type III only from the Type II floor."""
+    if payload["axis"] == "exec" or payload["floor"] >= 2:
+        return payload["criteria"]
+    return {key: value for key, value in payload["criteria"].items() if not key.startswith("III.")}
+
+
+def write_reference(evaluations: list[dict]) -> None:
+    specs = {}
+    for evaluation in evaluations:
+        if evaluation["slug"] not in ANCHORS:
+            continue
+        specs[evaluation["slug"]] = {
+            "type": {
+                "floor": evaluation["type"]["floor"],
+                "score": evaluation["type"]["score"],
+                "criteria": scored_criteria({"axis": "type", **evaluation["type"]}),
+            },
+            "exec": {"score": evaluation["exec"]["score"], "criteria": evaluation["exec"]["criteria"]},
+        }
+    payload = {
+        "note": "Expected grades for the calibration anchors, from `intelligence-scale mock`. Type III is left out below the Type II floor, where it does not move the score.",
+        "tolerance": {"criterion": 0.25, "type": 0.3, "exec": 0.1},
+        "alpha_min": 0.667,
+        "specs": specs,
+    }
+    REFERENCE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    REFERENCE_PATH.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    print(f"wrote {relative(REFERENCE_PATH)}")
+
+
+def write_mock(write_reference_file: bool = False) -> list[dict]:
+    """Write the fixture partial to temp/<RUN_ID>/<MODEL>.json and return its evaluations."""
+    specs = load_specs(include_drafts=True)
+    slugs = [spec.slug for spec in specs]
+    missing = [spec.slug for spec in specs if not spec.draft and spec.slug not in RATINGS]
     extra = [slug for slug in RATINGS if slug not in slugs]
     if missing or extra:
-        raise SystemExit(f"spec mismatch missing={missing} extra={extra}")
+        raise ScaleError(f"spec mismatch missing={missing} extra={extra}")
     evaluations = []
-    print(f"{'slug':<24} {'type':>5} {'exec':>5}  quadrant-inputs")
-    for slug in slugs:
-        meta = frontmatter(slug)
+    print(f"{'slug':<24} {'type':>5} {'exec':>5}")
+    for spec_file in specs:
+        slug = spec_file.slug
         if slug not in RATINGS:
             print(f"skipping draft spec {slug} (no mock rating)")
             continue
         spec = RATINGS[slug]
         for axis in ("type", "exec"):
             for _grade, _evidence, source in spec[axis]["rows"].values():
-                if source.startswith("http") and source not in (SPECS / f"{slug}.md").read_text(encoding="utf-8"):
-                    raise SystemExit(f"{slug} cites a URL that is not in the dossier: {source}")
+                if source.startswith("http") and source not in spec_file.text:
+                    raise ScaleError(f"{slug} cites a URL that is not in the dossier: {source}")
         type_payload, type_text = type_report(slug, spec)
         exec_payload, exec_text = exec_report(slug, spec)
         evaluations.append(
             {
                 "slug": slug,
-                "name": meta.get("name") or slug,
-                "url": meta.get("url") or "",
+                "name": spec_file.name,
+                "url": spec_file.url,
                 "type": {"score": type_payload["score"], "criteria": type_payload["criteria"], "floor": type_payload["floor"], "report": type_text},
                 "exec": {"score": exec_payload["score"], "criteria": exec_payload["criteria"], "report": exec_text},
             }
         )
         print(f"{slug:<24} {type_payload['score']:5.1f} {exec_payload['score']:5.2f}")
     payload = {"model": MODEL, "created": "", "git": "", "evaluations": evaluations}
-    path = ROOT / "temp" / RUN_ID / f"{MODEL}.json"
+    path = partial_path(RUN_ID, MODEL)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-    models = ROOT / "temp" / "exercise-models.txt"
-    models.write_text(MODEL + "\n", encoding="utf-8")
-    print(f"wrote {path.relative_to(ROOT)}")
-
-
-if __name__ == "__main__":
-    main()
+    print(f"wrote {relative(path)}")
+    if write_reference_file:
+        write_reference(evaluations)
+    return evaluations

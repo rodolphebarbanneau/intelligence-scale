@@ -3,92 +3,134 @@ name: Evaluate
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "test rates specs without publishing. calibrate rates the anchor specs and compares them with src/config/reference.json."
+        type: choice
+        options: [test, calibrate]
+        default: test
+      models:
+        description: "OpenRouter model slugs, comma-separated. Empty uses src/config/models.txt."
+        type: string
+        default: ""
+      specs:
+        description: "Spec slugs, comma-separated. Empty rates every spec in test mode and the anchors in calibrate mode."
+        type: string
+        default: ""
+      samples:
+        description: "Samples per model, spec, and axis. Checks pass on a strict majority."
+        type: string
+        default: "1"
+      max_cost:
+        description: "Stop starting new model calls after this many USD."
+        type: string
+        default: "5"
 
 permissions:
   contents: write
 
+concurrency:
+  group: evaluate-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  setup:
+  evaluate:
     runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.models.outputs.matrix }}
-      run_id: ${{ steps.meta.outputs.run_id }}
+    timeout-minutes: 120
+    env:
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      PYDANTIC_AI_NO_BANNER: "1"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.release.tag_name }}
-      - id: models
-        run: python scripts/rate.py --print-matrix
-      - id: meta
-        run: echo "run_id=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
-      - name: Check Copilot token
-        env:
-          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref }}
+
+      - uses: astral-sh/setup-uv@v10
+        with:
+          enable-cache: true
+
+      - name: Check OpenRouter key
         run: |
-          if [ -z "$COPILOT_GITHUB_TOKEN" ]; then
-            echo "Repository secret COPILOT_GITHUB_TOKEN is empty or missing."
-            echo "The name must be exactly COPILOT_GITHUB_TOKEN, not COPILOT_GITHUB_SECRET."
+          if [ -z "$OPENROUTER_API_KEY" ]; then
+            echo "::error::Repository secret OPENROUTER_API_KEY is empty or missing."
             exit 1
           fi
 
-  evaluate:
-    needs: setup
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        model: ${{ fromJson(needs.setup.outputs.matrix) }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.release.tag_name }}
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-      - name: Install Copilot CLI
-        run: npm install -g @github/copilot
-      - name: Rate specs
+      - name: Self-check
+        run: uv run intelligence-scale self-check
+
+      - name: Plan the run
+        id: plan
         env:
-          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
-          COPILOT_AUTO_UPDATE: "false"
-        run: python scripts/rate.py --model "${{ matrix.model }}" --run-id "${{ needs.setup.outputs.run_id }}"
-      - uses: actions/upload-artifact@v4
-        if: always()
+          EVENT: ${{ github.event_name }}
+          TAG: ${{ github.event.release.tag_name }}
+          MODE: ${{ inputs.mode }}
+          MODELS: ${{ inputs.models }}
+          SPECS: ${{ inputs.specs }}
+          SAMPLES: ${{ inputs.samples || vars.RELEASE_SAMPLES || '1' }}
+          MAX_COST: ${{ inputs.max_cost || vars.RELEASE_MAX_COST || '50' }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          if [ "$EVENT" = "release" ]; then
+            run_id="$TAG"
+            mode="release"
+          else
+            mode="$MODE"
+            run_id="test-${mode}-${RUN_NUMBER}"
+            [ "$mode" = "test" ] && run_id="test-dispatch-${RUN_NUMBER}"
+          fi
+          args="--samples $SAMPLES --max-cost $MAX_COST"
+          models=""
+          [ -n "$MODELS" ] && models="--model $MODELS"
+          if [ -n "$SPECS" ]; then
+            args="$args --spec $SPECS"
+          elif [ "$mode" = "calibrate" ]; then
+            args="$args --anchors"
+          fi
+          {
+            echo "run_id=$run_id"
+            echo "mode=$mode"
+            echo "args=$args"
+            echo "models=$models"
+          } >> "$GITHUB_OUTPUT"
+          echo "Run $run_id ($mode): $models $args"
+
+      - name: Rate specs
+        run: >-
+          uv run intelligence-scale run
+          --run-id "${{ steps.plan.outputs.run_id }}"
+          ${{ steps.plan.outputs.models }}
+          ${{ steps.plan.outputs.args }}
+          ${{ steps.plan.outputs.mode == 'release' && '--no-aggregate' || '' }}
+
+      - name: Calibrate
+        if: steps.plan.outputs.mode == 'calibrate'
+        run: uv run intelligence-scale calibrate --run-id "${{ steps.plan.outputs.run_id }}"
+
+      - uses: actions/upload-artifact@v7
+        if: always() && steps.plan.outputs.run_id != ''
         with:
-          name: partial-${{ strategy.job-index }}
-          path: temp
+          name: rating-${{ steps.plan.outputs.run_id }}
+          path: |
+            output/${{ steps.plan.outputs.run_id }}
+            temp/${{ steps.plan.outputs.run_id }}
           if-no-files-found: warn
 
-  aggregate:
-    needs: [setup, evaluate]
-    if: always() && needs.setup.result == 'success'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.repository.default_branch }}
-      - uses: actions/download-artifact@v4
-        continue-on-error: true
-        with:
-          pattern: partial-*
-          path: partial-downloads
-          merge-multiple: true
-      - name: Collect partials
+      - name: Publish to the default branch
+        if: steps.plan.outputs.mode == 'release'
+        env:
+          RUN_ID: ${{ steps.plan.outputs.run_id }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
-          dest="temp/${{ needs.setup.outputs.run_id }}"
-          mkdir -p "$dest"
-          find partial-downloads -name '*.json' -exec cp -f {} "$dest/" \;
-      - name: Aggregate
-        run: python scripts/rate.py --aggregate --run-id "${{ needs.setup.outputs.run_id }}"
-      - name: Snapshot quadrant
-        run: python scripts/quadrant.py --run-id "${{ needs.setup.outputs.run_id }}" --docs
-      - name: Commit output
-        run: |
+          git fetch --depth=1 origin "$DEFAULT_BRANCH"
+          git checkout -f -B "$DEFAULT_BRANCH" "origin/$DEFAULT_BRANCH"
+          uv run intelligence-scale aggregate --run-id "$RUN_ID" ${{ steps.plan.outputs.models }}
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add output/index.json "output/${{ needs.setup.outputs.run_id }}" site/quadrant.svg
+          git add output/index.json "output/$RUN_ID" site/quadrant.svg
           if git diff --staged --quiet; then
             exit 0
           fi
-          git commit -m "Record evaluation output for ${{ needs.setup.outputs.run_id }}"
-          git push
+          git commit -m "Record evaluation output for $RUN_ID"
+          git push origin "$DEFAULT_BRANCH"

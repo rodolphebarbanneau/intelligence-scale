@@ -1,0 +1,4 @@
+# anthropic/claude-opus-5.5
+# openai/gpt-6-astra
+x-ai/grok-4.7
+# moonshotai/kimi-k3

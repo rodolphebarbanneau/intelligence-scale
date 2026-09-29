@@ -50,6 +50,7 @@ The process an Operator runs may be designed by people, published by a vendor, o
 * [ ] Operators maintain persistent identity, context, permissions, and memory.
 * [ ] Humans primarily supervise, resolve exceptions, and define objectives instead of performing routine execution.
 * [ ] Core operations can continue without continuous human execution.
+* [ ] Routine cases end in their business outcome, such as a sent reply, a closed ticket, or a merged change, not in a draft a person must finish.
 
 **Goal:** move humans from execution to supervision.
 
@@ -65,18 +66,25 @@ Humans remain responsible for the organization, but their role has shifted from 
 
 ### Type III characteristics
 
-* [ ] Routine operational execution is performed autonomously by AI Operators.
+* [ ] Routine operations run with no structural human step, process after process.
 * [ ] Operators determine and allocate operational work within their mandates.
 * [ ] Operators coordinate directly without requiring human orchestration.
 * [ ] The organization detects events, makes operational decisions, executes responses, and evaluates outcomes autonomously.
 * [ ] Operators adapt processes when circumstances change instead of relying only on predefined workflows.
-* [ ] Human intervention is exceptional, with humans focused on purpose, strategy, capital, policy, risk, and major irreversible decisions.
+* [ ] Humans govern through enforced policy, budgets, and risk limits, and decide what is irreversible, instead of supervising routine work.
 
 **Goal:** move humans from supervision to governance.
 
 ## How a product is scored
 
-A product is scored from **0.0 to 3.0**. Each characteristic above becomes a criterion graded from 0.00 to 1.00, with its own grade table in the [type evaluator](https://github.com/rodolphebarbanneau/intelligence-scale/blob/main/skills/evaluate-type-scale/SKILL.md).
+A product is scored from **0.0 to 3.0**, from its spec in `src/specs/` and nothing else. Nobody browses during a rating, so every model reads the same evidence on every run.
+
+Each characteristic above becomes a criterion: five for Type I, seven for Type II, six for Type III. Every criterion has four levels, **0.25**, **0.50**, **0.75**, and **1.00**, and each level has yes/no checks written in the [type rubric](https://github.com/rodolphebarbanneau/intelligence-scale/blob/main/src/type.yaml). A model answers the checks and quotes the spec for every check it passes. The scorer, not the model, turns the answers into a grade:
+
+* A check whose quote is not in the spec fails.
+* The grade is the highest level whose checks all pass, plus a share of the next level. Half of the next level's checks on top of 0.50 gives 0.62.
+* Preview features cap a criterion at 0.75. A capability the buyer must wire from generic APIs or MCP caps it at 0.25.
+* Some criteria cap others. Process ownership (II.1) needs a durable actor (II.4 at least 0.75). Whole-process outcomes (II.7) cannot run ahead of ownership. Type III stays at or below 0.50 until a named actor owns a process.
 
 The integer is the highest Type whose criteria all score 1.00. A product reaches 2.0 only when every Type II criterion is met, and 3.0 only when every Type III criterion is also met. No rounding crosses that line.
 

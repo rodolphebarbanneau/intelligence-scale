@@ -1,0 +1,187 @@
+# Execution Scale rubric. Source of truth for the checks, caps, and the span cap.
+# Render into src/skills/evaluate-exec-scale/SKILL.md with: uv run intelligence-scale render-rubrics
+axis: exec
+
+keys: [E.1, E.2, E.3, E.4, E.5, E.6, E.7]
+
+span_cap:
+  key: E.1
+  below: 0.5
+  cap: 0.49
+  reason: "A product only one specialist craft can use cannot publish 0.50 or higher: when E.1 is below 0.50, the score is at most 0.49."
+
+common_limits:
+  - id: preview
+    q: "The spec marks the capability behind this criterion's highest passed check as preview, beta, experimental, research preview, early access, or waitlist."
+    cap: 0.75
+  - id: buyer_wired
+    q: "The spec shows this capability only through a generic API, SDK, webhook, or MCP server the buyer must build or wire, not as a shipped feature."
+    cap: 0.25
+  - id: other_plan
+    q: "The evidence for this criterion's highest passed check applies only to a different product, plan, edition, or deployment than the configuration you stated."
+    cap: 0.5
+
+criteria:
+  E.1:
+    name: Domain span
+    definition: Whose work fits on the product as it ships.
+    guidance:
+      - "One business function, such as support or sales, is not a specialist craft. A specialist craft is a trade such as writing code, design, or video editing."
+      - "Wrapping several agents of one craft, or a long feature list inside one craft, does not widen span."
+      - "Do not fail a check because jobs are not pre-built (E.7), systems need connecting (E.3), or there is one surface (E.5)."
+      - "One suite means the product works only inside one vendor's application family, such as Microsoft 365, Salesforce, or one workspace product. A general surface that connects to many vendors' systems is not one suite."
+    levels:
+      "0.25":
+        - id: some_work
+          q: "The spec names at least one kind of work the product ships for, such as a specialist craft or a business task."
+      "0.50":
+        - id: function
+          q: "The product ships for a whole business function (such as support, sales, marketing, HR, finance, or IT operations), not only a specialist craft."
+      "0.75":
+        - id: two_functions
+          q: "The product ships for two or more distinct business functions."
+      "1.00":
+        - id: general
+          q: "The product is a general work surface: people across the company can put their own work on it, whatever their function."
+    limits:
+      - id: one_suite
+        q: "The product works only inside one vendor's application family for the work it covers."
+        cap: 0.75
+
+  E.2:
+    name: Shared work
+    definition: Several people, and an operator, can work on the same thing.
+    guidance:
+      - "A chat notification that a run finished is not shared work. A channel where teammates and the operator talk in one thread is, when that thread is the work."
+    levels:
+      "0.25":
+        - id: notify
+          q: "The product can notify others about AI work or share a link to it."
+      "0.50":
+        - id: team_account
+          q: "The product has team or organization accounts where members share a workspace."
+      "0.75":
+        - id: same_run
+          q: "Several people can open, continue, or contribute to the same AI conversation, run, or agent."
+      "1.00":
+        - id: live_thread
+          q: "People and the AI actor work together live in one shared thread or workspace, see the same state, and hand work off."
+
+  E.3:
+    name: System reach
+    definition: The product reads and writes the systems where company work already lives.
+    guidance:
+      - "The craft's own toolchain (for a coding product, the git host, CI, and package registry) counts as the product's own artifacts."
+      - "Posting a message or a status update is not write-back. A connector name in a list is not read and write."
+      - "Computer use that operates the company's apps with the credentials it is given is reach. Browsing the public web for an answer is not."
+      - "Installing a listed application from the product's own catalog and signing in is not buyer wiring."
+    levels:
+      "0.25":
+        - id: own_artifacts
+          q: "The AI reads and writes the product's own artifacts, such as its repository, project, documents, or canvas."
+      "0.50":
+        - id: one_external
+          q: "The AI reads and writes at least one external system, or one suite's objects, that the company already runs."
+      "0.75":
+        - id: several_external
+          q: "The AI reads and writes several external systems of record, such as mail, tickets, CRM, files, or calendar, through shipped integrations."
+      "1.00":
+        - id: shipped_jobs
+          q: "The spec names systems the product reads and writes as part of shipped jobs, not only as available connectors."
+        - id: categories
+          q: "Those systems span more than one category, such as mail and CRM, or tickets and files."
+
+  E.4:
+    name: Extensible coverage
+    definition: Coverage can grow through a catalog the product ships.
+    guidance:
+      - "E.4 grades the catalog as a way to grow: whether it exists, whether it is limited to one craft or suite, and who can publish. How finished each entry is counts on E.7."
+      - "Community trust gates, such as a manager confirming an install, do not fail a check."
+    levels:
+      "0.25":
+        - id: extensions
+          q: "The product supports plugins, extensions, or MCP servers."
+      "0.50":
+        - id: templates_directory
+          q: "The product offers official templates or starter agents for more than one job, or an organization-internal directory of agents, skills, or workflows."
+      "0.75":
+        - id: first_party_catalog
+          q: "The product ships a first-party catalog or marketplace of installable agents, skills, apps, or workflows."
+      "1.00":
+        - id: not_one_lane
+          q: "That catalog is not limited to one craft or one suite."
+        - id: open_publishing
+          q: "Third parties or customer organizations can publish into that catalog."
+    limits:
+      - id: craft_catalog
+        q: "Every extension or catalog entry the spec shows serves one specialist craft, such as coding plugins for linters, repositories, and IDEs."
+        cap: 0.25
+
+  E.5:
+    name: Work surfaces
+    definition: Where that work can happen.
+    guidance:
+      - "Inbound webhooks that start a run are triggers, not surfaces. Status notifications in chat are not a working surface."
+      - "Surfaces do not widen span."
+    levels:
+      "0.25":
+        - id: one_surface
+          q: "People can work with the AI in at least one surface, such as a web app, IDE, terminal, or chat."
+      "0.50":
+        - id: two_surfaces
+          q: "People can work with the AI in two or more distinct surfaces, such as web and desktop, or an IDE and a CLI."
+      "0.75":
+        - id: workplace_chat
+          q: "People can start or continue work from workplace chat, such as Slack or Teams, as a working surface and not only for notifications."
+      "1.00":
+        - id: mail_or_customer
+          q: "Work can happen through mail or a customer-facing channel, such as email, voice, SMS, or a website chat."
+        - id: api_embed
+          q: "A documented public API or embed lets work happen from other software."
+
+  E.6:
+    name: Adoption path
+    definition: A team can put work on the product without assembling the core system.
+    guidance:
+      - "Missing SSO does not fail a check when a team can still adopt the product. This is not a trust-center or changelog score."
+    levels:
+      "0.25":
+        - id: access
+          q: "The spec documents how to get the product: sign-up, install, trial, or a sales contact."
+      "0.50":
+        - id: start_path
+          q: "There is a documented way to start putting work on the product, such as self-serve sign-up, install, trial, or an onboarding guide."
+      "0.75":
+        - id: team_setup
+          q: "A team can be set up in the product: invites, roles, shared billing, or workspace setup."
+      "1.00":
+        - id: admin_no_services
+          q: "Documented administration and permissions let an organization roll it out without professional services or a custom build."
+    limits:
+      - id: services_required
+        q: "The spec states the product works only after professional services, a forward-deployed team, or a custom platform build."
+        cap: 0.25
+
+  E.7:
+    name: Ready-made coverage
+    definition: A team reaches a working job without designing it by hand.
+    guidance:
+      - "Three paths count: shipped (the vendor ships the job ready to turn on), installed (a finished job installs from the product's catalog), and generated (the product's AI builds the job from a plain-language description and a person reviews it)."
+      - "A catalog of connectors or plugins, not finished jobs, counts on E.3 and E.4, not here."
+    levels:
+      "0.25":
+        - id: hand_built
+          q: "A person can build a job (an agent, workflow, or automation) in the product by hand."
+      "0.50":
+        - id: one_function
+          q: "The product offers ready-made jobs for at least one business function or craft, shipped, installable from its catalog, or generated from a plain-language description."
+      "0.75":
+        - id: two_functions
+          q: "Ready-made jobs exist for two or more business functions."
+      "1.00":
+        - id: no_wiring
+          q: "A non-specialist reaches a running job through one of those paths without a builder connecting tools, binding requirements, or setting triggers by hand."
+    limits:
+      - id: craft_jobs
+        q: "Every ready-made job the spec shows serves one specialist craft."
+        cap: 0.25

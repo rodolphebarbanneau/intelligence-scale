@@ -1,0 +1,401 @@
+# Intelligence Scale type rubric. Source of truth for the checks, caps, and gates.
+# Render into src/skills/evaluate-type-scale/SKILL.md with: uv run intelligence-scale render-rubrics
+axis: type
+
+types:
+  I: [I.1, I.2, I.3, I.4, I.5]
+  II: [II.1, II.2, II.3, II.4, II.5, II.6, II.7]
+  III: [III.1, III.2, III.3, III.4, III.5, III.6]
+
+common_limits:
+  - id: preview
+    q: "The spec marks the capability behind this criterion's highest passed check as preview, beta, experimental, research preview, early access, or waitlist."
+    cap: 0.75
+  - id: buyer_wired
+    q: "The spec shows this capability only through a generic API, SDK, webhook, or MCP server the buyer must build or wire, not as a shipped feature."
+    cap: 0.25
+  - id: other_plan
+    q: "The evidence for this criterion's highest passed check applies only to a different product, plan, edition, or deployment than the configuration you stated."
+    cap: 0.5
+
+cross_caps:
+  - targets: [II.1]
+    cap: 0.5
+    unless: {key: II.4, min: 0.75}
+    reason: "Owning a process needs a durable actor: II.1 stays at or below 0.50 unless II.4 is at least 0.75."
+  - targets: [II.7]
+    relative_to: II.1
+    plus: 0.25
+    reason: "Whole-process outcomes need someone to own the process: II.7 stays at or below II.1 + 0.25."
+  - targets: [III.1, III.2, III.3, III.4, III.5, III.6]
+    cap: 0.5
+    unless: {key: II.1, min: 0.75}
+    reason: "Orchestration needs process owners to orchestrate: every Type III criterion stays at or below 0.50 unless II.1 is at least 0.75."
+
+criteria:
+  I.1:
+    name: Routine AI assistance
+    definition: AI sits in the normal flow of work, not only as an experiment or an API call.
+    levels:
+      "0.25":
+        - id: available
+          q: "The spec describes AI that people can use for real work tasks in the product."
+      "0.50":
+        - id: in_surface
+          q: "The AI is available inside a work surface people already use (an app, editor, workspace, inbox, or chat they work in), not only through an API or a separate playground."
+      "0.75":
+        - id: acts_in_place
+          q: "The AI can act on the work item itself in that surface, such as editing a file, document, record, ticket, or message, not only answering questions about it."
+      "1.00":
+        - id: standard_feature
+          q: "The spec documents the AI as a standard part of the product for its users, not a lab, demo, or separate experiment."
+
+  I.2:
+    name: Context and capability access
+    definition: AI can reach the data and tools real work needs.
+    levels:
+      "0.25":
+        - id: session
+          q: "The AI can use content provided in the session, such as uploaded files, pasted text, or the open item."
+      "0.50":
+        - id: org_context
+          q: "The AI can use organizational context beyond the session, such as a workspace, repository, drive, knowledge base, or indexed company data."
+      "0.75":
+        - id: actions
+          q: "The AI can call tools or take actions in applications or systems, not only read or retrieve."
+      "1.00":
+        - id: connectors
+          q: "The product ships first-party connectors or integrations to two or more distinct systems, such as mail, files, tickets, CRM, or code hosting."
+        - id: permissions
+          q: "The spec states that the AI's access to data respects the user's or the organization's permissions."
+
+  I.3:
+    name: Bounded autonomous tasks
+    definition: AI can run a meaningful multi-step task inside a bounded objective.
+    guidance:
+      - "Task autonomy is Type I. A long or impressive task does not show that the AI owns a process."
+    levels:
+      "0.25":
+        - id: multi_part
+          q: "The AI can produce a multi-part result from one request, such as a document, a set of edits, or a report."
+      "0.50":
+        - id: tool_loop
+          q: "The AI can run a task of several steps that uses tools or actions, such as searching, editing, running commands, or operating software."
+      "0.75":
+        - id: self_directed
+          q: "Within a task, the AI decides the next step from the result of the previous one and continues until the task is done or a stop condition is reached."
+      "1.00":
+        - id: effectful
+          q: "Within a task, the AI can take effectful actions (write files, run commands, change records, send or post) without a person approving every step."
+        - id: artifact
+          q: "The task ends in a documented, inspectable result, such as a diff, pull request, report, changed record, or run log."
+
+  I.4:
+    name: Human direction and review
+    definition: People can start, inspect, approve, correct, and continue AI work while owning the broader process.
+    levels:
+      "0.25":
+        - id: start_see
+          q: "A person can start AI work and see its result."
+      "0.50":
+        - id: stop
+          q: "A person can stop or interrupt AI work while it runs."
+      "0.75":
+        - id: review_before
+          q: "A person can review proposed changes or actions before they take effect, such as a plan, a diff, a draft, or an approval prompt."
+      "1.00":
+        - id: correct_continue
+          q: "A person can correct or redirect the AI's work and have it continue from where it was, not only start over."
+
+  I.5:
+    name: Repeatable organizational use
+    definition: The product supports ongoing, repeatable use in real workflows, not one-off demos.
+    levels:
+      "0.25":
+        - id: persists
+          q: "Work, threads, or results persist so a person can return to them in a later session."
+      "0.50":
+        - id: reusable
+          q: "People can save reusable configuration, such as instructions, prompts, rules, skills, custom agents, or templates."
+      "0.75":
+        - id: shared
+          q: "That configuration or work can be shared with a team or organization, not only kept by one person."
+      "1.00":
+        - id: managed
+          q: "Admins can manage organization-wide settings, policies, or defaults for the AI."
+
+  II.1:
+    name: End-to-end process ownership
+    definition: A named AI actor is put in charge of a business process and keeps taking its cases over time.
+    guidance:
+      - "A business process is a recurring flow of cases through stages toward a business outcome, such as a support queue, invoice handling, lead follow-up, or change delivery. One change, one reply, or one report is a task."
+      - "A job that runs per artifact (per pull request, commit, scan, or document) is a trigger rule. It meets the 0.50 level, not 0.75."
+      - "Do not fail a check because a person, a template, or the product's builder defined the process. That is the mandate. Fail it when each unit of work is still handed over by a person."
+      - "Whether each case reaches its final outcome is II.7, not II.1."
+    levels:
+      "0.25":
+        - id: dispatched
+          q: "A person can hand a whole task to the AI and receive the finished result."
+      "0.50":
+        - id: rule_repeats
+          q: "A trigger, schedule, or workflow rule makes the AI run the same kind of work repeatedly without a person handing over each run."
+      "0.75":
+        - id: named_actor
+          q: "A named, persistent AI actor (an agent, worker, operator, or bot that exists between runs) is assigned a process, queue, channel, or role."
+        - id: own_intake
+          q: "That actor takes each new case from its own intake (its queue, channel, inbox, or triggers), rather than a person handing it each case."
+      "1.00":
+        - id: standing_mandate
+          q: "The actor keeps that responsibility across runs under a standing mandate, handling case after case over time."
+        - id: exceptions_only
+          q: "People handle exceptions or escalations; they do not accept, dispatch, or approve each routine case."
+
+  II.2:
+    name: Process-level execution
+    definition: AI progresses the process without a person orchestrating each task or step.
+    guidance:
+      - "Do not fail a check because people wrote the steps, or because optional approval steps exist."
+      - "Output that stops at a draft or an open pull request counts on II.7, not here."
+    levels:
+      "0.25":
+        - id: multi_step
+          q: "Once started, the AI performs more than one step of the work on its own."
+      "0.50":
+        - id: no_person_between
+          q: "A multi-step task runs from start to finish with no person required between its steps."
+      "0.75":
+        - id: across_stages
+          q: "A run moves work across tasks or stages of a process (for example triage, act, verify, hand off) with no person moving it between them."
+      "1.00":
+        - id: optional_humans
+          q: "Human steps inside a run are configurable or limited to exceptions; the organization can run routine cases without them."
+    limits:
+      - id: required_approval
+        q: "The spec states that a routine step inside the run always requires a person's approval and the organization cannot turn it off."
+        cap: 0.75
+
+  II.3:
+    name: Multi-capability execution
+    definition: The actor uses the tools, applications, agents, and systems needed to finish its process.
+    guidance:
+      - "Granting or binding tools at setup does not fail a check. Every actor is given its access by someone."
+      - "Writes that land only as drafts count on II.7, not here."
+    levels:
+      "0.25":
+        - id: one_tool
+          q: "During a run the AI uses at least one tool or action beyond generating text."
+      "0.50":
+        - id: several_tools
+          q: "During a run the AI selects among several tools, such as file, shell, and search tools in one environment."
+      "0.75":
+        - id: cross_family
+          q: "During a run the AI uses capabilities of different kinds, such as separate applications or systems, other agents or subagents, browser or computer use, and connectors."
+      "1.00":
+        - id: self_coordinated
+          q: "The AI chooses which of its granted capabilities to call and in what order; no person coordinates each call."
+
+  II.4:
+    name: Persistent AI actor
+    definition: A durable AI worker with its own identity, state, permissions, and access.
+    guidance:
+      - "A service account used by a job, or a memory file the prompt reads, meets the 0.50 level only."
+      - "An ephemeral environment per run is state within a run, not a durable environment."
+      - "Humans keeping admin rights over the actor does not fail a check. That is governance."
+    levels:
+      "0.25":
+        - id: run_state
+          q: "The AI keeps working state within a run, such as an environment, files, or a conversation, until the run ends."
+      "0.50":
+        - id: across_runs
+          q: "State persists across runs, such as resumable sessions, saved threads, memory, or a persistent configuration."
+      "0.75":
+        - id: durable_actor
+          q: "The product provides a durable, named AI actor that exists between runs, not only a saved configuration or a session."
+        - id: managed_memory
+          q: "That actor has memory the product manages across its runs, not only a file the prompt reads."
+      "1.00":
+        - id: own_principal
+          q: "The actor is its own principal with its own permissions, separate from any person's account."
+        - id: own_credentials
+          q: "The actor holds its own credentials or secrets for the systems it uses."
+        - id: durable_env
+          q: "The actor has a durable environment or execution state that persists between runs, such as a persistent machine, volume, or workspace."
+    limits:
+      - id: person_access
+        q: "The spec states the actor acts only with a person's identity or access, such as never holding more access than the signed-in user, or running with the triggering user's authentication."
+        cap: 0.75
+
+  II.5:
+    name: Human supervision and exceptions
+    definition: People supervise the work and handle exceptions instead of executing it.
+    levels:
+      "0.25":
+        - id: after_view
+          q: "People can see what the AI did after the fact, such as a transcript, diff, log, or report."
+      "0.50":
+        - id: in_progress
+          q: "People can observe work in progress or browse a history of runs."
+      "0.75":
+        - id: escalation
+          q: "The AI can pause for an approval or escalate an exception to a person, then continue after the person responds."
+      "1.00":
+        - id: intervene
+          q: "People can intervene in or stop a running piece of work."
+        - id: audit
+          q: "An audit trail or audit log records AI activity for review."
+
+  II.6:
+    name: Autonomous initiation and continuity
+    definition: Work starts and continues without a person manually starting every run.
+    guidance:
+      - "A person authoring the trigger rule does not fail a check. Someone always sets the schedule."
+      - "A trigger starts work. It does not make anyone own the process. That is II.1."
+    levels:
+      "0.25":
+        - id: start
+          q: "A person can start a run that proceeds without the person staying in it."
+      "0.50":
+        - id: background
+          q: "A run continues or repeats in the background after a person starts it, such as running on when the person leaves or repeating on an interval."
+      "0.75":
+        - id: trigger
+          q: "Runs start from at least one kind of automatic trigger, a schedule or an event, with no person starting each run."
+      "1.00":
+        - id: both_triggers
+          q: "Runs start both from schedules and from events such as webhooks, app events, messages, or queue items."
+        - id: no_open_app
+          q: "Triggered runs execute in the background or in the cloud without any person's app or computer staying open."
+
+  II.7:
+    name: Whole-process outcome
+    definition: For the routine cases of its process, the AI delivers the final business outcome in the system where it lives, not an intermediate artifact a person must finish.
+    guidance:
+      - "An opened pull request is not a merged change. A draft is not a sent reply. A proposed update is not an updated record."
+      - "Grade the process the product documents. When routine output always stops at a draft or review a person must complete, the 0.75 check fails."
+    levels:
+      "0.25":
+        - id: stage
+          q: "The AI completes at least one stage of a process on its own, producing a finished artifact such as a draft, a triage, a pull request, or a report."
+      "0.50":
+        - id: consecutive
+          q: "The AI completes two or more consecutive stages of the same process with no person between them, such as triage then resolve, or build then verify."
+      "0.75":
+        - id: final_outcome
+          q: "For routine cases, the AI delivers the final outcome in the system of record without a person finishing it, such as the reply sent, the ticket closed, the change merged or deployed, or the record updated."
+      "1.00":
+        - id: across_case_types
+          q: "The spec shows that final outcome across the routine case types of the process, not for one narrow case type."
+
+  III.1:
+    name: Autonomous routine operations
+    definition: Within the product's own scope, routine operations run with no structural human step.
+    guidance:
+      - "Rate within the product's own scope, its craft or function. Company coverage is the Execution Scale."
+    levels:
+      "0.25":
+        - id: some_unattended
+          q: "Some routine operations run unattended: they start automatically and finish with no person in the loop."
+      "0.50":
+        - id: one_process
+          q: "At least one whole process runs unattended for its routine cases, from automatic start to final outcome."
+      "0.75":
+        - id: several_processes
+          q: "Several distinct processes run unattended end to end within the product's scope."
+      "1.00":
+        - id: no_structural_step
+          q: "Across the product's scope, no routine operation structurally requires a person; people step in only for exceptions and policy."
+
+  III.2:
+    name: Work determination and allocation
+    definition: AI decides what operational work should happen next and who does it, within a mandate.
+    guidance:
+      - "Executing items already placed in a queue, or following a routing graph a person drew, does not pass the 0.75 or 1.00 checks."
+    levels:
+      "0.25":
+        - id: next_step
+          q: "Within a run, the AI decides which step or task to do next."
+      "0.50":
+        - id: proposes
+          q: "The AI proposes new work no one asked for, such as suggested tasks, issues, or follow-ups, from what it observes."
+      "0.75":
+        - id: creates_starts
+          q: "The AI creates and starts new work itself, within its mandate, without a person approving each item."
+      "1.00":
+        - id: allocates
+          q: "The AI assigns or delegates that work to other AI actors or people by its own decision, not by a fixed routing rule."
+
+  III.3:
+    name: AI-to-AI coordination
+    definition: Persistent AI actors coordinate and delegate without a person brokering each exchange.
+    guidance:
+      - "Subagents inside one human-started run are 0.25. Several independent agents are not coordination by themselves."
+    levels:
+      "0.25":
+        - id: subagents
+          q: "Within one run, an AI spawns or calls subagents and uses their results."
+      "0.50":
+        - id: shared_channel
+          q: "Several persistent AI actors work in a shared channel, thread, or workflow that people arranged."
+      "0.75":
+        - id: direct_delegation
+          q: "Persistent AI actors message or delegate work directly to each other, with no person relaying each exchange."
+      "1.00":
+        - id: open_handoffs
+          q: "Those actors hand off work beyond a fixed pipeline: they choose at run time which actor to involve."
+
+  III.4:
+    name: Closed operational loop
+    definition: Detect, decide, execute, observe, and evaluate, with outcomes shaping the next decisions.
+    levels:
+      "0.25":
+        - id: observes
+          q: "Within a run, the AI observes the result of its own actions, such as running tests or checking output, and reacts."
+      "0.50":
+        - id: outcomes_shown
+          q: "Outcomes of AI work are measured and shown to people, such as dashboards, evaluations, or analytics."
+      "0.75":
+        - id: fed_forward
+          q: "Evaluated outcomes of earlier runs feed into later runs automatically, such as remembered results, learned rules, or scores the AI reads."
+      "1.00":
+        - id: changes_decisions
+          q: "Those outcomes change later operational decisions (what to do, when, or how) without a person promoting each change."
+
+  III.5:
+    name: Adaptive orchestration
+    definition: AI changes how work is organized when conditions change, beyond branches a person wrote.
+    levels:
+      "0.25":
+        - id: authored_branches
+          q: "Work follows conditional branches or retries that people wrote."
+      "0.50":
+        - id: replans
+          q: "The AI changes its plan within a run when conditions change."
+      "0.75":
+        - id: reorganizes
+          q: "Across runs, the AI changes how work is organized in a bounded scope, such as reassigning responsibilities or altering a workflow, within its authority."
+      "1.00":
+        - id: new_paths
+          q: "The AI creates new operational paths (new workflows, actors, or processes) without a person shipping each change."
+
+  III.6:
+    name: Governance-level human role
+    definition: People govern through enforced policy and limits, not routine supervision.
+    guidance:
+      - "SSO, SCIM, or roles alone are access control and meet the 0.25 level only."
+      - "An activity log is II.5. The 1.00 audit check needs records of AI decisions against policy."
+      - "Human governance controls never fail a check. Type III does not mean people give up authority."
+    levels:
+      "0.25":
+        - id: access_control
+          q: "Admins control who and what can access the AI, such as roles, SSO, SCIM, or permissions."
+      "0.50":
+        - id: behavior_policy
+          q: "Admins set policies on what AI actors may do, such as allowed tools, actions, data, or approval rules."
+      "0.75":
+        - id: enforced_limits
+          q: "The product enforces budgets, spending, rate, risk, or action limits on AI actors."
+      "1.00":
+        - id: irreversible_gated
+          q: "Irreversible or high-risk actions are gated by policy (a required approval or a block), while routine actions proceed."
+        - id: decision_audit
+          q: "Audits cover AI decisions against policy, such as blocked actions, policy violations, or decision records, not only an activity log."

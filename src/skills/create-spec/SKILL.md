@@ -5,7 +5,7 @@ description: Write or rewrite a product dossier in specs/. Use when adding a spe
 
 # Create spec
 
-Write `specs/<slug>.md` as a sourced product dossier. Later ratings treat this file as the brief and may open only the URLs it cites. A missing fact cannot be scored later. Write the product, not the score.
+Write `src/specs/<slug>.md` as a sourced product dossier. Later ratings read **only this file**. They do not open the URLs it cites, and every rating check must quote a sentence from it. A fact that is not written here does not exist for the rating. Write the product, not the score.
 
 ## What a spec is
 
@@ -34,7 +34,7 @@ Do not pad with “unproven” lists. If the official pages do not describe a fe
 
 ## File
 
-Path: `specs/<slug>.md`
+Path: `src/specs/<slug>.md`
 
 `slug` is lowercase ASCII, digits, and hyphens. It matches the filename. Keep an existing slug when rewriting a file.
 
@@ -121,7 +121,10 @@ Primary source: https://cursor.com/docs/cloud-agent
 
 Rules:
 
-- One feature per bullet. One or two factual sentences.
+- One feature per bullet. One to three factual sentences.
+- Write how the feature works, not only its name. Say what starts it (a person, a schedule, an event), what it reads and writes and in which systems, what it produces (a draft, a pull request, a sent reply, a changed record), who has to approve or finish the result, whose identity and permissions it runs with, and what persists after the run ends. Write only what the pages state.
+- Give each feature its availability and plan the way the docs do: generally available, beta, preview, experimental, or research preview, and the plans or editions that include it. When the docs name no status or plan, write nothing rather than guessing.
+- Keep the docs’ own words for limits and requirements, such as “requires admin approval”, “runs with the user’s credentials”, or “only on Enterprise”. A later rating quotes them.
 - Use the vendor’s names (`Cloud Agents`, `Custom Agents`, `Ghostwriter`).
 - Do not interpret (“this is only coding work”, “this is not a business process”).
 - When the product wraps another agent, record what this product starts, what it surfaces, and what the docs say stays on the provider. That is a product fact, not a grade.
@@ -143,9 +146,10 @@ Do not list a URL that supports no sentence in the file.
 
 ## Done when
 
-- The file is `specs/<slug>.md` with valid frontmatter.
+- The file is `src/specs/<slug>.md` with valid frontmatter.
 - **Product** explains the thing without referring to the scales.
 - **Features** is grouped by vendor surfaces and is exhaustive against the docs nav.
 - Every bullet is backed by a cited official URL, with the docs site preferred.
+- Every feature says how it works and, when the docs state them, its availability status and plans.
 - **Sources** is docs-first and has no unused links.
 - No rating headings, no grades, no “not established” closers.
