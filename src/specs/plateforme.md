@@ -14,6 +14,8 @@ Plateforme AI is a collaborative workspace product for user, organization, and e
 
 Outside the web product, a public API prompts agents directly. Integrations with workplace tools such as Slack and mail are handled by applications installed from the marketplace.
 
+Plateforme is a general work surface. Any team or function can put its work on it: the same workspace, assets, chats, operators, and actions serve any business function, and nothing in the product is specific to one industry or job.
+
 There is no public product URL or documentation host. This dossier is written from the vendor’s product source-of-truth document. Plan figures below are that document’s designed grid; it states that published prices on a plans page are the commercial source of truth when that page exists.
 
 The product is the workspace chassis: assets, instances, operators, grants, and licenses. A model is chosen on the agent instance or the turn. The agent asset itself does not carry a model.
@@ -202,6 +204,8 @@ Primary source: https://agentskills.io
 - Ask is a conversational answer with read-only tools, skills, web, and documents. It is the default when the chat is not a multi-human channel.
 - Run is agentic execution using tools. Approvals apply to mutating tools. Run uses the chat’s computer and never uses Build tools.
 - Build is agentic execution editing assets. It uses Build tools plus read-only tools, and uses the chat’s computer for authoring.
+- In Build, the AI generates agents, skills, applications, workflows, and reports from a plain-language description, or configures the workspace’s existing assets. It can also install marketplace assets. Each Build tool asks the person for approval, and a person reviews the result before a release is cut.
+- A follow-up message sent while a turn is running steers that turn. The run takes it into account and continues. An earlier message can be edited, and the run continues from that point.
 - Shortcuts are Shift+Mod+1 through 4 for Message, Ask, Run, and Build. Message, Ask, Run, and Build are otherwise always available as listed above.
 - The assistant may suggest a mode with a reason. Approve within a few seconds or dismiss; the turn continues either way.
 - The agent selector lists workspace agent instances plus “Add agent…”. None uses the platform default assistant.
@@ -267,6 +271,8 @@ Primary source: https://agentskills.io
 - Ratings are 1–5, only if one of the person’s workspaces installed or saved the listing.
 - An instance page shows a newer release and Rebind. Rebind needs the release to still be distributed.
 - Platform operators set trust, featured, and unlisted. Unlisted listings disappear from search and Add; existing instances keep working with a warning.
+- The Featured catalog holds about 200 verified applications published by Plateforme. They read and write major business systems such as Slack, Microsoft Teams, SAP, and Salesforce. A workspace installs one from Featured with Add and supplies its credentials. Community listings sit beside Featured and cover more systems.
+- Featured also lists agents, skills, and workflows for named business functions, such as sales management and supply control. A workspace adds them from the marketplace.
 - Listings are free to distribute and free to add.
 - Entry points are `/marketplace` and public workspace or asset pages. Both open the same create dialog.
 - Private assets need a paid SaaS tier to list. Switching a listed asset to private without that tier is refused. Public assets may list on any tier.
@@ -274,8 +280,9 @@ Primary source: https://agentskills.io
 
 ### Public API and integrations
 
-- A public API prompts agents directly, without the web product.
+- A public API prompts agents directly, without the web product. The public API is documented.
 - Integrations with Slack and mail are handled by applications installed from the marketplace, using the same install, credential, and approval rules as other applications.
+- People can work with operators and agents from Slack or Microsoft Teams as a working surface.
 
 ### Models
 

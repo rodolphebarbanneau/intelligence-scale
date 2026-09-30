@@ -54,7 +54,7 @@ Examples of the split, not of a published score: a company-wide chat assistant t
 
 ## What the dot is
 
-Each release asks several models to rate every product. The dot uses the **median** of the scores that came back. An even count uses the mean of the two middle scores.
+Each release asks several models to rate every product. Each check is decided by a strict majority of the models that answered, so a 1-1 tie fails. The scorer grades that agreed checklist once, and the dot uses the resulting **consensus** score. One outlier model cannot move it, and the lowest and highest per-model scores stay visible as the spread.
 
 The table beside the chart ranks products by a **score** from **0 to 100**. It is the geometric mean of the two published axis scores after each is mapped onto 0–1:
 

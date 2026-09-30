@@ -282,8 +282,7 @@ class Runner:
         self.write_partial(model)
         parts = []
         for axis, result in zip(AXES, pair):
-            places = 1 if axis == "type" else 2
-            parts.append(f"{axis} failed: {result['error'][:300]}" if result.get("error") else f"{axis} {result['score']:.{places}f}")
+            parts.append(f"{axis} failed: {result['error'][:300]}" if result.get("error") else f"{axis} {result['score']:.2f}")
         cost = sum((result.get("usage") or {}).get("cost_usd") or 0 for result in pair)
         print(f"{model} {spec.slug}: {', '.join(parts)} (${cost:.3f})", flush=True)
 

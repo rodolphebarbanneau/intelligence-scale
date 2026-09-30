@@ -97,7 +97,7 @@ AI can reach the data and tools real work needs.
 | 0.25 | `session` | The AI can use content provided in the session, such as uploaded files, pasted text, or the open item. |
 | 0.50 | `org_context` | The AI can use organizational context beyond the session, such as a workspace, repository, drive, knowledge base, or indexed company data. |
 | 0.75 | `actions` | The AI can call tools or take actions in applications or systems, not only read or retrieve. |
-| 1.00 | `connectors` | The product ships first-party connectors or integrations to two or more distinct systems, such as mail, files, tickets, CRM, or code hosting. |
+| 1.00 | `connectors` | The product ships first-party connectors or integrations to two or more distinct systems, such as mail, files, tickets, CRM, or code hosting, either built in or installable from the product's own catalog with a sign-in. |
 | 1.00 | `permissions` | The spec states that the AI's access to data respects the user's or the organization's permissions. |
 
 #### I.3 — Bounded autonomous tasks
@@ -369,7 +369,7 @@ The scorer computes the score from the grades. You do not.
 
 * **Completed floor:** 3 when every Type II and Type III criterion is 1.00; 2 when every Type II criterion is 1.00; 1 when every Type I criterion is 1.00; otherwise 0.
 * **Progress:** the mean of the next Type's criteria, minus a weakest-link penalty of `0.25 × (1 − lowest) × mean`, clamped to 0.00–0.99.
-* **Score:** floor plus progress, rounded to one decimal, half down. An incomplete Type never rounds up across its gate: 1.96 with an incomplete Type II publishes as **1.9**.
+* **Score:** floor plus progress, rounded to two decimals, half down. An incomplete Type never rounds up across its gate: 1.996 with an incomplete Type II publishes as **1.99**.
 
 ## 9. Before you answer
 

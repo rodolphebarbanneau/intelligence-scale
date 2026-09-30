@@ -106,6 +106,25 @@ def grade_axis(
     return grades, notes
 
 
+def consensus_grades(rubric: Rubric, check_sets: list[dict[str, dict[str, list[str]]]]) -> dict[str, Decimal]:
+    """Grade the checklist that a strict majority of models agree on.
+
+    Each set is one model's `checks` payload: `{"I.2": {"passed": [...], "limits": [...]}}`.
+    A check or limit is kept when more than half of the models report it, so a 1-1 tie fails.
+    """
+    count = len(check_sets)
+    if not count:
+        raise ValueError("no check sets to combine")
+
+    def majority(key: str, field_name: str, item_id: str) -> bool:
+        votes = sum(1 for checks in check_sets if item_id in ((checks.get(key) or {}).get(field_name) or []))
+        return votes * 2 > count
+
+    passed = {key: {check.id: majority(key, "passed", check.id) for check in criterion.checks} for key, criterion in rubric.criteria.items()}
+    applied = {key: {limit.id: majority(key, "limits", limit.id) for limit in criterion.limits} for key, criterion in rubric.criteria.items()}
+    return grade_axis(rubric, passed, applied)[0]
+
+
 @dataclass
 class CheckResult:
     id: str
@@ -292,10 +311,10 @@ def type_score(rubric: Rubric, grades: dict[str, Decimal]) -> TypeScore:
     lowest = min(values)
     penalty = QUARTER * (ONE - lowest) * raw
     adjusted = min(max(raw - penalty, ZERO), Decimal("0.99"))
-    score = round_half_down(Decimal(floor) + adjusted, 1)
+    score = round_half_down(Decimal(floor) + adjusted, 2)
     gate = Decimal(floor + 1)
     if score >= gate:
-        score = gate - Decimal("0.1")
+        score = gate - Decimal("0.01")
     return TypeScore(floor, score, raw, lowest, penalty, adjusted, keys, [key for key in keys if grades[key] == lowest])
 
 

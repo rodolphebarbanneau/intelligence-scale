@@ -1,5 +1,5 @@
 {
-  "note": "Expected grades for the calibration anchors, from `intelligence-scale mock`. Type III is left out below the Type II floor, where it does not move the score.",
+  "note": "Expected grades for the calibration anchors. Type III is left out below the Type II floor, where it does not move the score.",
   "tolerance": {
     "criterion": 0.25,
     "type": 0.3,
@@ -10,7 +10,7 @@
     "agentforce": {
       "type": {
         "floor": 0,
-        "score": 0.7,
+        "score": 0.69,
         "criteria": {
           "I.1": 1.0,
           "I.2": 1.0,
@@ -42,7 +42,7 @@
     "cursor": {
       "type": {
         "floor": 1,
-        "score": 1.7,
+        "score": 1.69,
         "criteria": {
           "I.1": 1.0,
           "I.2": 1.0,
@@ -74,7 +74,7 @@
     "notion": {
       "type": {
         "floor": 0,
-        "score": 0.6,
+        "score": 0.61,
         "criteria": {
           "I.1": 1.0,
           "I.2": 1.0,
@@ -132,38 +132,6 @@
           "E.5": 0.5,
           "E.6": 0.75,
           "E.7": 0.5
-        }
-      }
-    },
-    "t3code": {
-      "type": {
-        "floor": 0,
-        "score": 0.8,
-        "criteria": {
-          "I.1": 1.0,
-          "I.2": 1.0,
-          "I.3": 1.0,
-          "I.4": 1.0,
-          "I.5": 0.5,
-          "II.1": 0.25,
-          "II.2": 0.5,
-          "II.3": 0.75,
-          "II.4": 0.5,
-          "II.5": 1.0,
-          "II.6": 0.5,
-          "II.7": 0.5
-        }
-      },
-      "exec": {
-        "score": 0.19,
-        "criteria": {
-          "E.1": 0.25,
-          "E.2": 0.0,
-          "E.3": 0.25,
-          "E.4": 0.0,
-          "E.5": 0.5,
-          "E.6": 0.5,
-          "E.7": 0.25
         }
       }
     }

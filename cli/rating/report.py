@@ -91,13 +91,13 @@ def type_payload(rubric: Rubric, result: AxisResult, meta: ReportMeta) -> dict:
         f"* **Weakest criterion:** {scored.lowest:.2f} ({', '.join(scored.weakest) or 'none'})",
         f"* **Weakest-link penalty:** {scored.penalty:.2f}",
         f"* **Adjusted progress:** {scored.adjusted:.2f}",
-        f"* **Final score:** **{scored.score:.1f}**",
+        f"* **Final score:** **{scored.score:.2f}**",
     ]
     criteria = {key: json_number(grade, 2) for key, grade in grades.items()}
-    fence = {"axis": "type", "score": json_number(scored.score, 1), "floor": scored.floor, "criteria": criteria}
+    fence = {"axis": "type", "score": json_number(scored.score, 2), "floor": scored.floor, "criteria": criteria}
     body = "\n\n".join(
         [
-            f"> **Intelligence Scale capability: {scored.score:.1f} / 3.0**",
+            f"> **Intelligence Scale capability: {scored.score:.2f} / 3.00**",
             interpret(scored.floor, scored.score),
             result.summary,
             f"**Rated configuration:** {result.configuration}",
@@ -111,7 +111,7 @@ def type_payload(rubric: Rubric, result: AxisResult, meta: ReportMeta) -> dict:
     )
     payload = {"score": fence["score"], "floor": scored.floor, "criteria": criteria}
     payload.update(payload_extras(rubric, result, meta))
-    payload["sample_scores"] = [json_number(score, 1) for score in samples]
+    payload["sample_scores"] = [json_number(score, 2) for score in samples]
     payload["report"] = body + "\n"
     return payload
 

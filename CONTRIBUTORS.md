@@ -13,10 +13,10 @@ That includes:
 - [`src/skills/`](src/skills/)
 - [`src/config/models.txt`](src/config/models.txt), the models a release asks
 - [`src/config/reference.json`](src/config/reference.json), the expected grades for the calibration anchors
-- [`cli/`](cli/), the `intelligence-scale` command line: the rating loop and scorer in [`cli/rating/`](cli/rating/), the quadrant, the local server, and the mock fixture
+- [`cli/`](cli/), the `intelligence-scale` command line: the rating loop and scorer in [`cli/rating/`](cli/rating/), the quadrant, the local server, and the mock fixture of fictional products
 - [`site/`](site/)
 
-Open a pull request that explains what changed and why. A change to a rubric or a skill changes future ratings, so describe how scores would move. After editing `src/type.yaml` or `src/exec.yaml`, run `uv run intelligence-scale render-rubrics` to update the skills, then `uv run intelligence-scale self-check`. When a change is meant to move grades, run `uv run intelligence-scale mock --write-reference` only if the expected anchor grades should move too, and say so in the pull request.
+Open a pull request that explains what changed and why. A change to a rubric or a skill changes future ratings, so describe how scores would move. After editing `src/type.yaml` or `src/exec.yaml`, run `uv run intelligence-scale render-rubrics` to update the skills, then `uv run intelligence-scale self-check`. When a change is meant to move grades, edit the expected anchor grades in `src/config/reference.json` by hand only if they should move too, and say so in the pull request.
 
 ## Spec representatives
 

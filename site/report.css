@@ -752,6 +752,10 @@ tr.spec.is-hot { background: color-mix(in srgb, var(--elev) 70%, var(--bg)); }
   white-space: nowrap;
 }
 
+.crit-consensus { font-weight: 600; color: var(--ink); }
+
+.crit-differs { color: var(--muted, inherit); text-decoration: underline dotted; text-underline-offset: 3px; }
+
 .analysis-block { margin: 8px 0 40px; }
 
 .model-block { margin: 20px 0 0; padding-top: 16px; border-top: 1px solid var(--line); }

@@ -47,7 +47,7 @@ A coding agent that can own an engineering change sits to the right and stays lo
 
 A company-wide chat assistant that people prompt step by step belongs with the Challengers. A workspace product where agents run on schedules and events across many teams belongs with the Leaders. A coding or support agent that carries its work end to end belongs with the Visionaries until other functions have a native path. A thin assistant or an unfinished prototype sits with Niche.
 
-Each release asks several models to rate every product. The dot is the **median** of the scores that came back. The table ranks products by a **0–100 score**, the geometric mean of the two published axes, and also shows the spread so a single outlier stays visible.
+Each release asks several models to rate every product. A strict majority of models must agree on each check, and the dot is the **consensus** score of that agreed checklist. The table ranks products by a **0–100 score**, the geometric mean of the two published axes, and also shows the spread so a single outlier stays visible.
 
 ## How a product is rated
 
@@ -87,7 +87,7 @@ Other commands:
 - `score answer.json --axis type --spec <slug>` scores check answers written by hand or by another assistant.
 - `render-rubrics` writes the rubrics into the evaluator skills. `self-check` runs the built-in checks.
 - `quadrant` renders a run as a quadrant SVG. `serve` browses the report locally.
-- `mock` writes the one-model fixture run that the calibration anchors come from.
+- `mock` writes a one-model fixture run of three fictional products (foo, bar, baz), to exercise scoring, reports, and the quadrant without a model call.
 
 The GitHub workflow runs the same CLI. Publishing a release rates every published spec with the models in [`src/config/models.txt`](src/config/models.txt) and commits the output. A manual run can rate a subset in test mode, or calibrate, without committing anything.
 

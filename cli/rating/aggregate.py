@@ -9,10 +9,11 @@ from typing import Any
 
 from cli.paths import AXES, OUTPUT_DIR, PARTIALS_DIR, catalog_for, git_sha, is_test_run, now, relative, safe_id, safe_model
 from cli.quadrant import write_quadrants
-from cli.rating.scoring import json_number, round_half_down
+from cli.rating.rubric import load_rubric
+from cli.rating.scoring import consensus_grades, exec_score, json_number, round_half_down, type_score
 from cli.rating.specs import spec_drafts
 
-GATES = (Decimal("1.0"), Decimal("2.0"), Decimal("3.0"))
+ZERO = Decimal("0")
 PUBLISHED_FIELDS = ("score", "floor", "criteria", "configuration", "samples")
 
 
@@ -45,8 +46,8 @@ def write_run(run_id: str, models: list[str], quadrant: bool = True) -> dict:
         summaries = {axis: summarize_axis(axis, models, by_model, slug) for axis in AXES}
         entry.update(summaries)
         if all(summary["plotted"] for summary in summaries.values()):
-            type_value = Decimal(str(summaries["type"]["median"]))
-            exec_value = Decimal(str(summaries["exec"]["median"]))
+            type_value = Decimal(str(summaries["type"]["consensus"]))
+            exec_value = Decimal(str(summaries["exec"]["consensus"]))
             x = (type_value - Decimal("1.5")) / Decimal("1.5")
             y = (exec_value * 2) - Decimal("1")
             entry["x"] = float(round_half_down(x, 4))
@@ -81,7 +82,9 @@ def find_evaluation(partial: dict | None, slug: str) -> dict | None:
 
 def summarize_axis(axis: str, models: list[str], by_model: dict, slug: str) -> dict:
     model_results: dict[str, dict] = {}
-    scores = []
+    scores: list[Decimal] = []
+    check_sets: list[dict] = []
+    grade_sets: list[dict[str, Decimal]] = []
     for model in models:
         evaluation = find_evaluation(by_model.get(model), slug)
         if evaluation is None or axis not in evaluation:
@@ -98,17 +101,42 @@ def summarize_axis(axis: str, models: list[str], by_model: dict, slug: str) -> d
         published["report"] = result.get("report") or ""
         model_results[model] = published
         scores.append(Decimal(str(result["score"])))
-    places = 1 if axis == "type" else 2
+        if result.get("checks"):
+            check_sets.append(result["checks"])
+        grade_sets.append({key: Decimal(str(value)) for key, value in (result.get("criteria") or {}).items()})
+    places = 2
     plotted = bool(scores) and len(scores) * 2 >= len(models)
     summary: dict[str, Any] = {"models": model_results, "plotted": plotted}
     if not scores:
-        summary.update({"median": None, "average": None, "lowest": None, "highest": None})
+        summary.update({"consensus": None, "criteria": {}, "lowest": None, "average": None, "highest": None})
+        if axis == "type":
+            summary["floor"] = None
         return summary
-    summary["median"] = json_number(publish_score(axis, median(scores), scores), places)
-    summary["average"] = json_number(round_half_down(sum(scores) / len(scores), places), places)
+    rubric = load_rubric(axis)
+    if len(check_sets) == len(scores):
+        grades = consensus_grades(rubric, check_sets)
+    else:
+        grades = fixture_grades(rubric.keys, grade_sets)
+    if axis == "type":
+        scored = type_score(rubric, grades)
+        summary["consensus"] = json_number(scored.score, places)
+        summary["floor"] = scored.floor
+    else:
+        summary["consensus"] = json_number(exec_score(rubric, grades).score, places)
+    summary["criteria"] = {key: json_number(grade, 2) for key, grade in grades.items()}
     summary["lowest"] = json_number(min(scores), places)
+    summary["average"] = json_number(round_half_down(sum(scores, ZERO) / len(scores), places), places)
     summary["highest"] = json_number(max(scores), places)
     return summary
+
+
+def fixture_grades(keys: list[str], grade_sets: list[dict[str, Decimal]]) -> dict[str, Decimal]:
+    """Criterion-level fallback for partials without check payloads, such as the mock fixture: the middle grade per criterion."""
+    grades: dict[str, Decimal] = {}
+    for key in keys:
+        ordered = sorted(grades_by_model.get(key, ZERO) for grades_by_model in grade_sets)
+        grades[key] = ordered[(len(ordered) - 1) // 2]
+    return grades
 
 
 def write_spec_reports(run_dir: Path, spec: dict) -> None:
@@ -143,25 +171,6 @@ def narrative(report: str) -> str:
     if not fences:
         return report.strip()
     return report[: fences[-1].start()].strip()
-
-
-def publish_score(axis: str, med: Decimal, scores: list[Decimal]) -> Decimal:
-    places = 1 if axis == "type" else 2
-    rounded = round_half_down(med, places)
-    if axis != "type":
-        return rounded
-    for gate in GATES:
-        if rounded >= gate and med < gate and not all(score >= gate for score in scores):
-            rounded = gate - Decimal("0.1")
-    return rounded
-
-
-def median(scores: list[Decimal]) -> Decimal:
-    ordered = sorted(scores)
-    middle = len(ordered) // 2
-    if len(ordered) % 2 == 1:
-        return ordered[middle]
-    return (ordered[middle - 1] + ordered[middle]) / 2
 
 
 def compound_score(type_value: Decimal, exec_value: Decimal) -> int:

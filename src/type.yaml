@@ -65,7 +65,7 @@ criteria:
           q: "The AI can call tools or take actions in applications or systems, not only read or retrieve."
       "1.00":
         - id: connectors
-          q: "The product ships first-party connectors or integrations to two or more distinct systems, such as mail, files, tickets, CRM, or code hosting."
+          q: "The product ships first-party connectors or integrations to two or more distinct systems, such as mail, files, tickets, CRM, or code hosting, either built in or installable from the product's own catalog with a sign-in."
         - id: permissions
           q: "The spec states that the AI's access to data respects the user's or the organization's permissions."
 

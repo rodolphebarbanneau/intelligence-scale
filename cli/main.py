@@ -214,16 +214,13 @@ def serve(
 
 @app.command()
 def mock(
-    write_reference: Annotated[
-        bool, typer.Option("--write-reference", help=f"Also rewrite the calibration anchors in {relative(REFERENCE_PATH)}.")
-    ] = False,
     aggregate: Annotated[bool, typer.Option(help="Aggregate the mock run into output/ afterwards.")] = True,
 ) -> None:
-    """Write the one-model mock fixture run, graded at criterion level, under its test- id."""
+    """Write the one-model mock run of three fictional products, graded at criterion level, under its test- id."""
     from cli.mock import MODEL, RUN_ID, write_mock
     from cli.rating.aggregate import write_run
 
-    write_mock(write_reference)
+    write_mock()
     if aggregate:
         write_run(RUN_ID, [MODEL])
 

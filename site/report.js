@@ -184,8 +184,10 @@ async function initIndex() {
       wrap.style.left = `${clamp((Number(group.x) + 1) / 2 * 100)}%`;
       wrap.style.top = `${clamp((1 - Number(group.y)) / 2 * 100)}%`;
       const first = members[0];
-      const type = first.type && first.type.median != null ? Number(first.type.median).toFixed(1) : "—";
-      const coverage = first.exec && first.exec.median != null ? Number(first.exec.median).toFixed(2) : "—";
+      const typeValue = axisValue(first.type);
+      const coverageValue = axisValue(first.exec);
+      const type = typeValue != null ? typeValue.toFixed(2) : "—";
+      const coverage = coverageValue != null ? coverageValue.toFixed(2) : "—";
       const score = specScore(first);
       const scoreText = score < 0 ? "—" : String(score);
       const names = members.map((spec) => spec.name || spec.slug);
@@ -255,7 +257,7 @@ async function initIndex() {
       const score = specScore(spec);
       compound.textContent = score < 0 ? "—" : String(score);
       row.append(nameCell, quadrant, compound);
-      row.append(scoreCell(spec.type, 3, 1));
+      row.append(scoreCell(spec.type, 3, 2));
       row.append(scoreCell(spec.exec, 1, 2));
       row.addEventListener("click", (event) => {
         if (event.target.closest("a")) return;
@@ -297,8 +299,8 @@ function filteredSpecs(state) {
   const factor = state.dir === "asc" ? 1 : -1;
   return items.slice().sort((a, b) => {
     if (state.sort === "score") return factor * (specScore(a) - specScore(b));
-    if (state.sort === "type") return factor * (medianOf(a.type) - medianOf(b.type));
-    if (state.sort === "exec") return factor * (medianOf(a.exec) - medianOf(b.exec));
+    if (state.sort === "type") return factor * (sortValue(a.type) - sortValue(b.type));
+    if (state.sort === "exec") return factor * (sortValue(a.exec) - sortValue(b.exec));
     const left = state.sort === "quadrant" ? displayQuadrant(a.quadrant) : a.name || a.slug || "";
     const right = state.sort === "quadrant" ? displayQuadrant(b.quadrant) : b.name || b.slug || "";
     return factor * left.localeCompare(right);
@@ -331,22 +333,32 @@ function wrapSlugs(wrap) {
 
 function groupTip(members) {
   const first = members[0];
-  const type = first.type && first.type.median != null ? Number(first.type.median).toFixed(1) : "—";
-  const coverage = first.exec && first.exec.median != null ? Number(first.exec.median).toFixed(2) : "—";
+  const typeValue = axisValue(first.type);
+  const coverageValue = axisValue(first.exec);
+  const type = typeValue != null ? typeValue.toFixed(2) : "—";
+  const coverage = coverageValue != null ? coverageValue.toFixed(2) : "—";
   const score = specScore(first);
   const scoreText = score < 0 ? "—" : String(score);
   const names = members.map((spec) => `<strong>${escapeHtml(spec.name || spec.slug)}</strong>`).join("");
   return `${names}<p>${escapeHtml(displayQuadrant(first.quadrant) || "Unplotted")}<br>Score ${escapeHtml(scoreText)} · Type ${escapeHtml(type)} · Coverage ${escapeHtml(coverage)}</p>`;
 }
 
-function medianOf(axis) {
-  return axis && axis.median != null ? Number(axis.median) : -1;
+// The agreed score of an axis. Runs published before check voting only carry `median`.
+function axisValue(axis) {
+  if (!axis) return null;
+  const value = axis.consensus != null ? axis.consensus : axis.median;
+  return value != null ? Number(value) : null;
+}
+
+function sortValue(axis) {
+  const value = axisValue(axis);
+  return value != null ? value : -1;
 }
 
 function specScore(spec) {
   if (spec && spec.score != null) return Number(spec.score);
-  const type = spec && spec.type && spec.type.median;
-  const coverage = spec && spec.exec && spec.exec.median;
+  const type = spec && axisValue(spec.type);
+  const coverage = spec && axisValue(spec.exec);
   if (type == null || coverage == null) return -1;
   return Math.round(100 * Math.sqrt((Number(type) / 3) * Number(coverage)));
 }
@@ -494,7 +506,8 @@ function hideTip() {
 
 function scoreCell(axis, scaleMax, places) {
   const cell = document.createElement("td");
-  const average = axis ? axisStat(axis, "average") : null;
+  const consensus = axisValue(axis);
+  const average = consensus != null ? consensus : axis ? axisStat(axis, "average") : null;
   const lowest = axis ? axisStat(axis, "lowest") : null;
   const highest = axis ? axisStat(axis, "highest") : null;
   if (average == null || lowest == null || highest == null) {
@@ -627,16 +640,19 @@ function criteriaTable(title, axis, id) {
   const table = document.createElement("table");
   table.className = "criteria";
   const head = document.createElement("tr");
-  head.innerHTML = `<th>Criterion</th>${models.map((model) => `<th>${escapeHtml(model)}</th>`).join("")}`;
+  head.innerHTML = `<th>Criterion</th><th class="crit-consensus">Consensus</th>${models.map((model) => `<th>${escapeHtml(model)}</th>`).join("")}`;
   table.append(head);
   for (const key of keys) {
     const meta = CRITERIA[key] || { name: key, blurb: "" };
     const row = document.createElement("tr");
+    const agreed = axis.criteria ? axis.criteria[key] : null;
+    const consensusCell = `<td class="crit-grade crit-consensus">${agreed == null ? "—" : escapeHtml(formatGrade(agreed))}</td>`;
     const grades = models.map((model) => {
       const value = axis.models[model].criteria ? axis.models[model].criteria[key] : null;
-      return `<td class="crit-grade">${value == null ? "—" : escapeHtml(formatGrade(value))}</td>`;
+      const differs = value != null && agreed != null && Number(value) !== Number(agreed);
+      return `<td class="crit-grade${differs ? " crit-differs" : ""}">${value == null ? "—" : escapeHtml(formatGrade(value))}</td>`;
     }).join("");
-    row.innerHTML = `<th><span class="crit-id">${escapeHtml(key)}</span><span class="crit-name">${escapeHtml(meta.name)}</span><span class="crit-blurb">${escapeHtml(meta.blurb)}</span></th>${grades}`;
+    row.innerHTML = `<th><span class="crit-id">${escapeHtml(key)}</span><span class="crit-name">${escapeHtml(meta.name)}</span><span class="crit-blurb">${escapeHtml(meta.blurb)}</span></th>${consensusCell}${grades}`;
     table.append(row);
   }
   section.append(heading, table);
@@ -649,11 +665,11 @@ function renderScorecard(root, spec) {
   root.replaceChildren();
   const quadrant = displayQuadrant(spec.quadrant) || "Unplotted";
   const score = specScore(spec);
-  const type = spec.type && spec.type.median != null ? Number(spec.type.median) : null;
-  const coverage = spec.exec && spec.exec.median != null ? Number(spec.exec.median) : null;
+  const type = axisValue(spec.type);
+  const coverage = axisValue(spec.exec);
   root.append(statCard("Quadrant", `<span class="chip">${escapeHtml(quadrant)}</span>`));
   root.append(statCard("Score", score < 0 ? "—" : `<strong>${score}</strong><span class="stat-scale">0–100</span>`));
-  root.append(statCard("Type", type == null ? "—" : `<strong>${type.toFixed(1)}</strong><span class="stat-scale">0–3</span>${miniTrack(type, 3)}`));
+  root.append(statCard("Type", type == null ? "—" : `<strong>${type.toFixed(2)}</strong><span class="stat-scale">0–3</span>${miniTrack(type, 3)}`));
   root.append(statCard("Coverage", coverage == null ? "—" : `<strong>${coverage.toFixed(2)}</strong><span class="stat-scale">0–1</span>${miniTrack(coverage, 1)}`));
   if (spec.url) {
     const link = document.createElement("a");

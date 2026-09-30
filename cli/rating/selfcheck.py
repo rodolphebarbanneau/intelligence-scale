@@ -17,12 +17,12 @@ from cli.paths import (
     load_models,
 )
 from cli.quadrant import render_svg
-from cli.rating.aggregate import compound_score, median, publish_score, quadrant_name
+from cli.rating.aggregate import compound_score, quadrant_name
 from cli.rating.calibrate import anchors, krippendorff_interval
 from cli.rating.rubric import load_rubric, render_skills, rubric_path, skill_path
 from cli.rating.runner import dry_answer
 from cli.rating.schema import AxisAnswer, CheckAnswer, CriterionAnswer, LimitAnswer
-from cli.rating.scoring import decide_axis, exec_score, grade_axis, grade_from_checks, normalize, round_half_down, type_score, verify_quote
+from cli.rating.scoring import consensus_grades, decide_axis, exec_score, grade_axis, grade_from_checks, normalize, round_half_down, type_score, verify_quote
 from cli.rating.specs import is_draft, load_specs
 from cli.settings import Settings
 
@@ -52,12 +52,14 @@ def check_rounding() -> None:
     D = Decimal
     assert round_half_down(D("0.625"), 2) == D("0.62")
     assert round_half_down(D("0.635"), 2) == D("0.63")
-    assert round_half_down(D("1.95"), 1) == D("1.9")
-    assert publish_score("type", D("1.96"), [D("1.96")]) == D("1.9")
-    assert publish_score("type", D("2.0"), [D("2.0"), D("2.0")]) == D("2.0")
-    assert publish_score("type", D("1.99"), [D("1.96"), D("2.02")]) == D("1.9")
-    assert median([D("1.2"), D("1.8"), D("1.4")]) == D("1.4")
-    assert median([D("1.2"), D("1.8")]) == D("1.5")
+    assert round_half_down(D("1.995"), 2) == D("1.99")
+    type_rubric = load_rubric("type")
+    grades = {key: D("0") for key in type_rubric.keys}
+    grades.update({key: D("1") for key in type_rubric.types["I"] + type_rubric.types["II"]})
+    grades["II.3"] = D("0.88")
+    assert type_score(type_rubric, grades).score == D("1.95"), "type scores keep two decimals"
+    grades["II.3"] = D("0.99")
+    assert type_score(type_rubric, grades).score == D("1.99"), "an incomplete Type II never reaches 2.00"
     assert quadrant_name(D("0"), D("0")) == "Leaders"
     assert quadrant_name(D("-0.1"), D("0.2")) == "Challengers"
     assert quadrant_name(D("0.1"), D("-0.2")) == "Visionaries"
@@ -135,6 +137,13 @@ def check_quotes_and_votes() -> None:
     assert not voted.criteria["I.1"].limits[0].applies and any("preview" in item for item in voted.adjustments)
     split_vote = decide_axis(type_rubric, [one(True), one(False)], spec)
     assert split_vote.criteria["I.1"].grade == D("0")
+    def models_checks(*passes: bool) -> list[dict[str, dict[str, list[str]]]]:
+        return [{"I.1": {"passed": ["available"] if passed else [], "limits": []}} for passed in passes]
+
+    assert consensus_grades(type_rubric, models_checks(True, True, False))["I.1"] == D("0.25")
+    assert consensus_grades(type_rubric, models_checks(True, False, False))["I.1"] == D("0")
+    assert consensus_grades(type_rubric, models_checks(True, False))["I.1"] == D("0"), "a 1-1 tie fails"
+    assert consensus_grades(type_rubric, models_checks(True))["I.1"] == D("0.25")
     missing = AxisAnswer(configuration="c", summary="s", gap="g", criteria=[CriterionAnswer(key="I.1", checks=[], limits=[], note="")])
     assert any("II.7 was not answered" in item for item in decide_axis(type_rubric, [missing], spec).adjustments)
 

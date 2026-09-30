@@ -77,7 +77,7 @@ Humans remain responsible for the organization, but their role has shifted from 
 
 ## How a product is scored
 
-A product is scored from **0.0 to 3.0**, from its spec in `src/specs/` and nothing else. Nobody browses during a rating, so every model reads the same evidence on every run.
+A product is scored from **0.00 to 3.00** (two decimals) from its spec in `src/specs/` and nothing else. Nobody browses during a rating, so every model reads the same evidence on every run.
 
 Each characteristic above becomes a criterion: five for Type I, seven for Type II, six for Type III. Every criterion has four levels, **0.25**, **0.50**, **0.75**, and **1.00**, and each level has yes/no checks written in the [type rubric](https://github.com/rodolphebarbanneau/intelligence-scale/blob/main/src/type.yaml). A model answers the checks and quotes the spec for every check it passes. The scorer, not the model, turns the answers into a grade:
 
@@ -86,7 +86,7 @@ Each characteristic above becomes a criterion: five for Type I, seven for Type I
 * Preview features cap a criterion at 0.75. A capability the buyer must wire from generic APIs or MCP caps it at 0.25.
 * Some criteria cap others. Process ownership (II.1) needs a durable actor (II.4 at least 0.75). Whole-process outcomes (II.7) cannot run ahead of ownership. Type III stays at or below 0.50 until a named actor owns a process.
 
-The integer is the highest Type whose criteria all score 1.00. A product reaches 2.0 only when every Type II criterion is met, and 3.0 only when every Type III criterion is also met. No rounding crosses that line.
+The integer is the highest Type whose criteria all score 1.00. A product reaches 2.0 only when every Type II criterion is met, and 3.0 only when every Type III criterion is also met. Each gate is hard, and no rounding crosses it: an incomplete Type II tops out at 1.99.
 
 The decimal is progress toward the next Type: the mean of its criteria, reduced in proportion to the weakest one. The reduction removes at most a quarter of that progress. One missing capability keeps the product short of the next integer. Early capabilities toward it still show.
 
