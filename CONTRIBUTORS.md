@@ -26,7 +26,7 @@ Representatives may open an issue or a pull request to correct a factual error i
 
 Representatives do not set scores. Do not edit [`output/`](output/). The next release reads the corrected spec and writes a new run.
 
-A new dossier can ship as `draft: true` until it is ready for a published release. Draft specs can be rated in a local `test-` run. They do not appear in production output.
+A new dossier can ship as `draft: true` until it is ready for a published release. Draft specs can be rated in a local `--test` run. They do not appear in production output.
 
 ## How to send a change
 

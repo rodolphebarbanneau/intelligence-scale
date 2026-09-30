@@ -74,7 +74,7 @@ uv run intelligence-scale run --spec cursor --model x-ai/grok-4.7
 
 Every Python tool in this repository is a command of that one CLI, under [`cli/`](cli/). Run `uv run intelligence-scale --help`, or `--help` after any command, for the full list of options.
 
-A run without `--run-id` gets a `test-` id. It writes `output/test-…/` and stays out of the published index. Useful options:
+A run without `--run-id` is named after the short commit hash, rates every published spec, and is added to the published index:
 
 - `--samples 3` asks each model three times and keeps a check only when most samples pass it.
 - `--max-cost 5` stops starting new calls after five US dollars.

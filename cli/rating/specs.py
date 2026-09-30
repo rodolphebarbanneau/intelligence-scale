@@ -39,6 +39,7 @@ def is_draft(meta: dict) -> bool:
 
 def load_specs(only: list[str] | None = None, include_drafts: bool = False) -> list[Spec]:
     specs = []
+    drafts_skipped: list[str] = []
     for path in sorted(SPECS_DIR.glob("*.md")):
         text = path.read_text(encoding="utf-8").replace("\r\n", "\n")
         meta, _body = parse_frontmatter(text, path)
@@ -48,8 +49,10 @@ def load_specs(only: list[str] | None = None, include_drafts: bool = False) -> l
         if only and slug not in only:
             continue
         draft = is_draft(meta)
-        if draft and not include_drafts and not only:
-            print(f"skipping draft spec {slug}", file=sys.stderr)
+        if draft and not include_drafts:
+            drafts_skipped.append(slug)
+            if not only:
+                print(f"skipping draft spec {slug}", file=sys.stderr)
             continue
         specs.append(
             Spec(
@@ -64,7 +67,9 @@ def load_specs(only: list[str] | None = None, include_drafts: bool = False) -> l
     if only:
         missing = sorted(set(only) - {spec.slug for spec in specs})
         if missing:
-            raise ScaleError(f"unknown spec slugs: {', '.join(missing)}")
+            drafts = [slug for slug in missing if slug in drafts_skipped]
+            hint = f" ({', '.join(drafts)} is a draft: add --test)" if drafts else ""
+            raise ScaleError(f"unknown spec slugs: {', '.join(missing)}{hint}")
     return specs
 
 

@@ -57,7 +57,7 @@ reviewed: YYYY-MM-DD
 - `docs` is the official documentation root. Omit the field when there is no docs host.
 - `kind` is `product` unless the user names another kind.
 - `reviewed` is the date of this research, ISO `YYYY-MM-DD`.
-- `draft` is optional. Set `draft: true` while the dossier is unfinished. Draft specs can be rated in a `test-` run. Published releases and the GitHub evaluation workflow skip them. Omit the field, or set `false`, when the spec is ready to ship.
+- `draft` is optional. Set `draft: true` while the dossier is unfinished. Draft specs can be rated in a `--test` run. Published releases and the GitHub evaluation workflow skip them. Omit the field, or set `false`, when the spec is ready to ship.
 
 The `#` heading matches `name`.
 

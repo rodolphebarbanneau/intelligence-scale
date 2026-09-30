@@ -8,7 +8,7 @@ from typing import Annotated
 import typer
 
 from cli.errors import ScaleError
-from cli.paths import MODELS_FILE, REFERENCE_PATH, is_test_run, load_models, relative, timestamp_id, today
+from cli.paths import MODELS_FILE, REFERENCE_PATH, git_sha, is_test_run, load_models, relative, timestamp_id, today
 
 app = typer.Typer(
     name="intelligence-scale",
@@ -67,12 +67,35 @@ def chosen_models(model: list[str] | None, models_file: Path, dry_run: bool) -> 
     return split(model) or load_models(models_file)
 
 
+def resolve_run_id(run_id: str | None, test: bool) -> str:
+    """Test runs always carry the test- prefix that keeps them out of the published index."""
+    if test:
+        if not run_id:
+            return timestamp_id()
+        return run_id if run_id.startswith("test-") else f"test-{run_id}"
+    if run_id:
+        if is_test_run(run_id):
+            raise typer.BadParameter("test- ids are for test runs; add --test", param_hint="--run-id")
+        return run_id
+    sha = git_sha()[:7]
+    if not sha:
+        raise typer.BadParameter("no git commit to name the run after; pass --run-id", param_hint="--run-id")
+    return sha
+
+
 @app.command()
 def run(
     model: ModelOption = None,
     models_file: ModelsFileOption = MODELS_FILE,
     dry_run: DryRunOption = False,
-    run_id: Annotated[str | None, typer.Option("--run-id", "-r", help="Release tag, or a test- id. Default: test-<timestamp>.")] = None,
+    test: Annotated[
+        bool,
+        typer.Option("--test", help="Test run: also rate draft specs, and keep the run out of the published index. The id gets a test- prefix."),
+    ] = False,
+    run_id: Annotated[
+        str | None,
+        typer.Option("--run-id", "-r", help="Release tag or any id. Default: the short commit hash, or test-<timestamp> with --test."),
+    ] = None,
     spec: Annotated[
         list[str] | None,
         typer.Option("--spec", "-s", help="Spec slug. Repeat or comma-separate. Default: every published spec."),
@@ -94,11 +117,11 @@ def run(
 
     if anchors and spec:
         raise typer.BadParameter("pass either --spec or --anchors, not both", param_hint="--anchors")
-    run_id = run_id or timestamp_id()
+    run_id = resolve_run_id(run_id, test)
     models = chosen_models(model, models_file, dry_run)
     require_key(models)
     only = anchor_slugs(reference) if anchors else split(spec) or None
-    specs = load_specs(only, include_drafts=is_test_run(run_id))
+    specs = load_specs(only, include_drafts=test)
     if not specs:
         raise ScaleError("no specs found")
     typer.echo(f"run {run_id}: {len(models)} model(s), {len(specs)} spec(s), {samples} sample(s) per axis")
